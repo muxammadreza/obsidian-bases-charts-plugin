@@ -1,0 +1,7 @@
+- Kick off runtime debugging by running the `bun: dev` task defined in `.vscode/tasks.json`; trigger it via the `run_task` tool so Vite keeps mirroring plugin builds into the dev vault.
+- Launch Obsidian through the `obsidian: debug` task (or `bun run obsidian:debug`) to execute `automation/dev/launchObsidianDebug.ts`; avoid spawning Obsidian manually so platform-specific detection, remote debugging flags, and URI routing stay consistent.
+- Provide `DEV_VAULT_PATH` in `.env` (or the current shell) so the helper opens the correct vault; ensure `bases-preview.base` exists under that vault when tests depend on the default preview file.
+- Expose overrides through the documented environment variables: `OBSIDIAN_EXECUTABLE` for the binary path, `OBSIDIAN_REMOTE_DEBUG_PORT` for Chrome attach, and `OBSIDIAN_PROFILE` for profile selection; remember the script reads process env first, then `.env`.
+- Preserve the cross-platform launch flow in `launchObsidianDebug.ts` when editing it: keep the per-OS executable resolvers, the delayed `obsidian://open` dispatch, and the remote debugging flag so VS Code can attach reliably.
+- Reference the VS Code configurations in `.vscode/launch.json` when guiding attach workflows; the `Run Dev + Attach` compound should remain the primary recommendation, with port updates reflected in both tasks and launch configs.
+- Update `automation/dev/RUNTIME_DEBUG.md` alongside any behavior or CLI changes so engineers launching debug sessions have accurate, task-aligned steps.

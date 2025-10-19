@@ -1,0 +1,7 @@
+- Consult the Context7 MCP server before referencing external Svelte, Svelte-echarts, echarts, or Obsidian API behavior, new beta api for bases; do not rely on memory for these APIs.
+- Use `context7__resolve-library-id` to select the closest matching library, review the description, and immediately follow with `context7__get-library-docs` scoped to the topic you need.
+- Prefer official IDs surfaced by Context7 (e.g., core Svelte, Svelte-echarts, echarts, Obsidian API, new beta api for bases) and confirm the version metadata matches the release you intend to target.
+- Capture small, focused snippets from Context7 docs instead of large dumps; adapt examples to fit the plugin’s TypeScript + Svelte structure under `packages/obsidian/src`.
+- When Context7 provides multiple patterns, align with the project’s existing abstractions (chart view components, Obsidian `ChartView` helpers) before introducing new styles.
+- Cross-check Context7 snippets against Obsidian plugin constraints (lifecycle methods, `registerView`, file I/O limits) and adjust to preserve existing behavior.
+- Cite Context7-derived facts and examples in responses, noting the library ID and topic you queried so reviewers can trace the source.

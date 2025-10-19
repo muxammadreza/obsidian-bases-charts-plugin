@@ -1,0 +1,7 @@
+- Keep plugin source within `packages/obsidian/src`; expose new entry points by wiring them into `main.ts` alongside the existing chart registrations.
+- Store Svelte UI under `packages/obsidian/src/charts`; follow the PascalCase filename pattern (`ScatterPlot.svelte`, `PlotGridItem.svelte`) when adding views or shared snippets.
+- Centralize data shaping helpers in `packages/obsidian/src/ChartData.ts` and parsing utilities in `packages/obsidian/src/utils/utils.ts`; extend those modules instead of scattering duplicate logic.
+- Maintain shared styling in `packages/obsidian/src/styles.css` so plots inherit the same Obsidian-compatible variables.
+- Use `automation/` for build-time tooling (`automation/build`, `automation/release.ts`, `automation/stats.ts`) and avoid mixing runtime code into that tree.
+- Put test fixtures and Bun tests inside `tests/`; reuse the existing helper stubs (`tests/obsidianMock.ts`, `tests/happydom.ts`) when expanding coverage.
+- Treat `exampleVault/` and `exampleData/` as sample assets for local verification; keep generated bundles out of these directories.

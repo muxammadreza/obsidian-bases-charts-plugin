@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { AxisX, AxisY, BarY, GridY, Plot, Text } from 'svelteplot';
-	import { CHART_SETTINGS, ChartView } from '../ChartView';
 	import { onMount } from 'svelte';
-	import { toCompactString } from '../utils/utils';
+	import type { DataWrapper } from '../ChartData';
+	import { buildChartConfig } from '../echarts/config';
+	import { buildBarOptions } from '../echarts/options';
+	import type { ChartView } from '../ChartView';
 	import PlotGrid from './PlotGrid.svelte';
 
 	interface Props {
@@ -11,47 +12,28 @@
 
 	let { view }: Props = $props();
 
-	let show_labels: boolean = $state(true);
-	let show_percentages: boolean = $state(false);
+	let chartConfig = $state(buildChartConfig(view, { chartType: 'bar' }));
+	let parseErrors = $derived(chartConfig.overrideParseErrors ?? []);
 
-	function onUpdate() {
-		show_labels = Boolean(view.config?.get(CHART_SETTINGS.SHOW_LABELS) ?? true);
-		show_percentages = Boolean(view.config?.get(CHART_SETTINGS.SHOW_PERCENTAGES) ?? false);
+	function refreshConfig(): void {
+		chartConfig = buildChartConfig(view, { chartType: 'bar' });
 	}
 
 	onMount(() => {
-		view.events.on('data-updated', onUpdate);
-
+		refreshConfig();
+		view.events.on('data-updated', refreshConfig);
 		return () => {
-			view.events.off('data-updated', onUpdate);
+			view.events.off('data-updated', refreshConfig);
 		};
 	});
+
+	function buildOption({ data, chartIndex }: { data: DataWrapper; chartIndex: number }) {
+		const result = buildBarOptions(data, chartIndex, chartConfig);
+		return {
+			option: result.option,
+			overrideErrors: result.overrideErrors,
+		};
+	}
 </script>
 
-<PlotGrid view={view}>
-	{#snippet chartSnippet({ data, chartIndex, xName, groupFn, height })}
-		<Plot
-			x={{ label: xName, type: 'band' }}
-			y={{ label: `↑ ${data.getChartName(chartIndex)}`, tickFormat: show_percentages ? d => `${String(d)}%` : d => toCompactString(d) }}
-			height={height}
-			class="bases-charts-plot"
-		>
-			<AxisX fill="var(--bases-charts-text)" stroke="var(--bases-charts-text)" opacity={1} />
-			<AxisY fill="var(--bases-charts-text)" stroke="var(--bases-charts-text)" opacity={1} />
-			<GridY stroke="var(--bases-charts-grid)" strokeOpacity={1} />
-
-			<BarY data={data.getFlat(chartIndex)} x="x" y="y" fill={groupFn} />
-			{#if show_labels}
-				<Text
-					data={data.getStacked(chartIndex)}
-					x="x"
-					y="y"
-					fill="var(--bases-charts-text)"
-					text={d => (show_percentages ? `${d.y.toFixed(1)}%` : toCompactString(d.y))}
-					lineAnchor="bottom"
-					dy={-5}
-				/>
-			{/if}
-		</Plot>
-	{/snippet}
-</PlotGrid>
+<PlotGrid view={view} xAxisLabel={chartConfig.xAxisLabel} buildOption={buildOption} globalErrors={parseErrors}></PlotGrid>

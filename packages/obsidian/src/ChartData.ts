@@ -201,6 +201,9 @@ export class PropertySeparatedData extends AbstractDataWrapper<BasesPropertyId, 
 	}
 
 	getGroupIdentifiers(): string[] {
+		if (this.groupBySet.length === 0) {
+			return ['All entries'];
+		}
 		return this.groupBySet;
 	}
 
@@ -227,4 +230,51 @@ export function sortDataByGroup(data: ProcessedData[]): ProcessedData[] {
 		}
 		return 0;
 	});
+}
+
+export interface LegendMetadata {
+	groupIndex: number;
+	label: string;
+	color: string;
+}
+
+export interface EChartsDataPoint {
+	rawX: number | string | Date;
+	xKey: string;
+	y: number;
+	file: string;
+	label?: string;
+	groupIndex: number;
+	chartIndex: number;
+	seriesLabel: string;
+}
+
+export function toEChartsDataPoints(dataWrapper: DataWrapper, chartIndex: number): EChartsDataPoint[] {
+	const flatData = dataWrapper.getFlat(chartIndex);
+
+	return flatData.map(entry => ({
+		rawX: entry.x,
+		xKey: createEChartsKey(entry.x),
+		y: entry.y,
+		file: entry.file,
+		label: entry.label,
+		groupIndex: entry.groupIndex,
+		chartIndex: entry.chartIndex,
+		seriesLabel: dataWrapper.getGroupName(entry.groupIndex),
+	}));
+}
+
+export function collectLegendMetadata(dataWrapper: DataWrapper): LegendMetadata[] {
+	return dataWrapper.getGroupIdentifiers().map((_, groupIndex) => ({
+		groupIndex,
+		label: dataWrapper.getGroupName(groupIndex),
+		color: dataWrapper.getColorFromGroupIndex(groupIndex),
+	}));
+}
+
+function createEChartsKey(value: number | string | Date): string {
+	if (value instanceof Date) {
+		return value.toISOString();
+	}
+	return String(value);
 }

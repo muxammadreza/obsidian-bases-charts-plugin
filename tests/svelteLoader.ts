@@ -13,6 +13,9 @@ plugin({
 					filename: path,
 					generate: 'client',
 					dev: true,
+					compatibility: {
+						componentApi: 4,
+					},
 				});
 
 				return {

@@ -1,6 +1,6 @@
 import type { BasesEntry, QueryController } from 'obsidian';
 import type { BasesPropertyId, ViewOption } from 'obsidian';
-import { BasesView, Events } from 'obsidian';
+import { BasesView, Events, Notice } from 'obsidian';
 import type { DataWrapper, ProcessedData } from 'packages/obsidian/src/ChartData';
 import { emptyDataWrapper, GroupSeparatedData, PropertySeparatedData } from 'packages/obsidian/src/ChartData';
 import BarPlot from 'packages/obsidian/src/charts/BarPlot.svelte';
@@ -24,6 +24,7 @@ export const CHART_SETTINGS = {
 	MIN_Y_OVERRIDE: 'min-y-override',
 	MAX_Y_OVERRIDE: 'max-y-override',
 	LABEL_PROP: 'label-property',
+	ECHARTS_OVERRIDES: 'echarts-options-override',
 } as const;
 
 export enum MultiChartMode {
@@ -35,6 +36,11 @@ export interface YDomainOverrides {
 	min: number | null;
 	max: number | null;
 	synced: boolean;
+}
+
+export interface AdvancedOverridesResult {
+	overrides: Record<string, unknown> | null;
+	errors: string[];
 }
 
 function parseConfigAsNumber(value: unknown): number | null {
@@ -193,6 +199,46 @@ export class ChartView extends BasesView {
 		};
 	}
 
+	getAdvancedOverrides(): AdvancedOverridesResult {
+		const raw = this.config.get(CHART_SETTINGS.ECHARTS_OVERRIDES);
+		const errors: string[] = [];
+
+		if (raw == null) {
+			return { overrides: null, errors };
+		}
+
+		if (typeof raw === 'object') {
+			if (isPlainObject(raw)) {
+				return { overrides: raw, errors };
+			}
+			errors.push('Advanced overrides must be a JSON object.');
+			return { overrides: null, errors };
+		}
+
+		if (typeof raw !== 'string') {
+			errors.push('Advanced overrides must be provided as a JSON string.');
+			return { overrides: null, errors };
+		}
+
+		const rawString = raw.trim();
+		if (rawString === '') {
+			return { overrides: null, errors };
+		}
+
+		try {
+			const parsed = JSON.parse(rawString) as unknown;
+			if (!isPlainObject(parsed)) {
+				errors.push('Advanced overrides must be a JSON object.');
+				return { overrides: null, errors };
+			}
+			return { overrides: parsed, errors };
+		} catch (error) {
+			const message = error instanceof Error ? error.message : 'Unknown parse error';
+			errors.push(`Failed to parse advanced overrides: ${message}`);
+			return { overrides: null, errors };
+		}
+	}
+
 	async openFile(filePath: string, newTab: boolean): Promise<void> {
 		const tFile = this.app.vault.getFileByPath(filePath);
 		if (!tFile) {
@@ -205,6 +251,10 @@ export class ChartView extends BasesView {
 				state: { mode: 'source' },
 			});
 		}
+	}
+
+	notifyError(message: string): void {
+		new Notice(`Bases Charts: ${message}`);
 	}
 
 	static getViewOptions(type: ChartViewType): ViewOption[] {
@@ -258,6 +308,13 @@ export class ChartView extends BasesView {
 				placeholder: 'Leave empty to disable',
 				default: '',
 			},
+			{
+				displayName: 'Advanced ECharts overrides (JSON)',
+				type: 'text',
+				key: CHART_SETTINGS.ECHARTS_OVERRIDES,
+				placeholder: 'Paste JSON object',
+				default: '',
+			},
 		];
 	}
 
@@ -294,4 +351,14 @@ export class ChartView extends BasesView {
 			},
 		];
 	}
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+	if (value == null) {
+		return false;
+	}
+	if (typeof value !== 'object') {
+		return false;
+	}
+	return Object.getPrototypeOf(value) === Object.prototype;
 }

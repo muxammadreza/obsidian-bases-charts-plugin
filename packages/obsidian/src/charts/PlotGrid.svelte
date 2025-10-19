@@ -1,45 +1,59 @@
 <script lang="ts">
-	import { onMount, type Snippet } from 'svelte';
-	import { CHART_SETTINGS, type ChartView } from '../ChartView';
-	import { OBSIDIAN_DEFAULT_SINGLE_COLOR, type FullChartProps } from '../utils/utils';
+	import { onMount } from 'svelte';
+	import type { ChartOptionResult } from '../echarts/options';
+	import { collectLegendMetadata, type DataWrapper, type LegendMetadata } from '../ChartData';
+	import type { ChartView } from '../ChartView';
 	import PlotGridItem from './PlotGridItem.svelte';
-	import type { DataWrapper } from '../ChartData';
+
+	interface BuildOptionArgs {
+		data: DataWrapper;
+		chartIndex: number;
+	}
+
+	interface BuildOptionResult extends Pick<ChartOptionResult, 'option' | 'overrideErrors'> {}
 
 	interface Props {
 		view: ChartView;
-		chartSnippet: Snippet<[FullChartProps<string, string>]>;
+		xAxisLabel: string;
+		buildOption: (args: BuildOptionArgs) => BuildOptionResult;
+		globalErrors?: string[];
 	}
 
-	let { view, chartSnippet }: Props = $props();
+	let { view, xAxisLabel, buildOption, globalErrors = [] }: Props = $props();
 
 	let data: DataWrapper | null = $state(null) as DataWrapper | null;
-	let xName: string = $state('');
-	let isGrouped: boolean = $derived(data?.hasMultipleGroups() ?? false);
-	let groupFn = $derived(data?.getChartGroupIdentifier() ?? OBSIDIAN_DEFAULT_SINGLE_COLOR);
+	let legendEntries: LegendMetadata[] = $derived(data ? collectLegendMetadata(data) : []);
+	let xLabel: string = $derived(xAxisLabel);
+	let topLevelErrors: string[] = $derived([...new Set(globalErrors.filter(Boolean))]);
 
-	function onUpdate() {
-		const xField = view.config?.getAsPropertyId(CHART_SETTINGS.X);
-
-		xName = xField ? `${view.config.getDisplayName(xField)} →` : '';
-
+	function refresh(): void {
 		data = view.processData();
 	}
 
 	onMount(() => {
-		view.events.on('data-updated', onUpdate);
+		refresh();
+		view.events.on('data-updated', refresh);
 
 		return () => {
-			view.events.off('data-updated', onUpdate);
+			view.events.off('data-updated', refresh);
 		};
 	});
 </script>
 
+{#if topLevelErrors.length > 0}
+	<div class="bases-charts-error-banner" role="alert">
+		{#each topLevelErrors as error}
+			<span class="bases-charts-error-chip">{error}</span>
+		{/each}
+	</div>
+{/if}
+
 <div class="bases-charts-plot-legend">
-	{#if data}
-		{#each data.getGroupIdentifiers() as _, groupIndex}
+	{#if legendEntries.length > 0}
+		{#each legendEntries as entry}
 			<div class="bases-charts-plot-legend-item">
-				<div class="bases-charts-plot-legend-color" style="--color: {data.getColorFromGroupIndex(groupIndex)}"></div>
-				<span class="bases-charts-plot-legend-label">{data.getGroupName(groupIndex)}</span>
+				<div class="bases-charts-plot-legend-color" style="--color: {entry.color}"></div>
+				<span class="bases-charts-plot-legend-label">{entry.label}</span>
 			</div>
 		{/each}
 	{/if}
@@ -47,21 +61,20 @@
 
 <div class="bases-charts-plot-grid">
 	{#if data}
-		{#each data.getChartIdentifiers() as _, chartIndex}
-			<PlotGridItem
-				view={view}
-				chartSnippet={chartSnippet}
-				chartProps={{
-					data,
-					chartIndex,
-					xName,
-					isGrouped,
-					groupFn,
-				}}
-			></PlotGridItem>
+		{#if data.getChartIdentifiers().length > 0}
+			{#each data.getChartIdentifiers() as _, chartIndex}
+				{@const result = buildOption({ data, chartIndex })}
+				<PlotGridItem
+					view={view}
+					chartName={data.getChartName(chartIndex)}
+					xAxisLabel={xLabel}
+					option={result.option}
+					overrideErrors={result.overrideErrors}
+				></PlotGridItem>
+			{/each}
 		{:else}
 			<p>No properties selected</p>
-		{/each}
+		{/if}
 	{:else}
 		<p>No data to display</p>
 	{/if}
@@ -74,6 +87,26 @@
 		gap: var(--size-4-4);
 		width: 100%;
 		height: 100%;
+	}
+
+	.bases-charts-error-banner {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--size-2-2);
+		margin-bottom: var(--size-4-3);
+		padding: var(--size-2-3) var(--size-4-2);
+		border-radius: var(--radius-s);
+		background-color: #d72c2c;
+		color: #ffffff;
+	}
+
+	.bases-charts-error-chip {
+		padding: var(--size-2-1) var(--size-2-3);
+		border-radius: var(--radius-s);
+		background-color: rgba(0, 0, 0, 0.2);
+		color: inherit;
+		font-size: var(--font-small);
+		max-width: 100%;
 	}
 
 	.bases-charts-plot-legend {

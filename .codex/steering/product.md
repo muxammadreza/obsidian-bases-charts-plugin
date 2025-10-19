@@ -1,0 +1,6 @@
+- Present Bases Charts as an Obsidian Bases plugin that adds scatter, line, and bar chart views through the registrations in `packages/obsidian/src/main.ts`.
+- Highlight that the plugin turns Base query results into interactive charts so users can spot trends quickly and open the underlying note by clicking a plotted point, relying on `ChartView.openFile` in `packages/obsidian/src/ChartView.ts`.
+- Emphasize the two multi-chart segmentation modes (`MultiChartMode.GROUP` vs `MultiChartMode.PROPERTY`) and explain how they organize data, referencing the logic inside `ChartView.processData` (`packages/obsidian/src/ChartView.ts`).
+- Call out that only fields producing numeric Y values are charted; mention the `parseValueAsNumber` guard in `packages/obsidian/src/utils/utils.ts` and advise users to choose number-compatible properties.
+- Surface the optional extras—label property support for scatter plots, Y-axis syncing and overrides, and bar-chart percentage/label toggles—driven by `CHART_SETTINGS` in `packages/obsidian/src/ChartView.ts` and `BarPlot.svelte`.
+- Convey the visual identity: the plugin leans on SveltePlot components plus the Obsidian palette defined in `packages/obsidian/src/utils/utils.ts`, so design tweaks should respect that aesthetic.
