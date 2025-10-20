@@ -110,9 +110,19 @@ export class ChartView extends BasesView {
 	}
 
 	processData(): DataWrapper {
-		const xField = this.config.getAsPropertyId(CHART_SETTINGS.X);
-		const mode = this.config.get(CHART_SETTINGS.MULTI_CHART) ?? MultiChartMode.PROPERTY;
-		const propertyOrder = this.config.getOrder();
+		const config = this.config;
+		if (!config) {
+			return emptyDataWrapper(this);
+		}
+
+		if (!this.data) {
+			return emptyDataWrapper(this);
+		}
+
+		const xField = config.getAsPropertyId(CHART_SETTINGS.X);
+		const mode = config.get(CHART_SETTINGS.MULTI_CHART) ?? MultiChartMode.PROPERTY;
+		const propertyOrder = config.getOrder();
+		const labelProp = config.getAsPropertyId(CHART_SETTINGS.LABEL_PROP);
 
 		if (mode !== MultiChartMode.GROUP && mode !== MultiChartMode.PROPERTY) {
 			// eslint-disable-next-line @typescript-eslint/no-base-to-string
@@ -137,7 +147,7 @@ export class ChartView extends BasesView {
 			}
 
 			for (const entry of group.entries) {
-				const processedEntry = this.processEntry(entry, xField, propertyOrder, groupIndex, mode);
+				const processedEntry = this.processEntry(entry, xField, propertyOrder, groupIndex, mode, labelProp);
 				data.push(...processedEntry);
 			}
 		}
@@ -149,11 +159,17 @@ export class ChartView extends BasesView {
 		}
 	}
 
-	processEntry(entry: BasesEntry, xField: BasesPropertyId, propertyOrder: BasesPropertyId[], groupIndex: number, mode: MultiChartMode): ProcessedData[] {
+	processEntry(
+		entry: BasesEntry,
+		xField: BasesPropertyId,
+		propertyOrder: BasesPropertyId[],
+		groupIndex: number,
+		mode: MultiChartMode,
+		labelProp?: BasesPropertyId,
+	): ProcessedData[] {
 		try {
 			const x = entry.getValue(xField);
 			const xValue = parseValueAsX(x);
-			const labelProp = this.config.getAsPropertyId(CHART_SETTINGS.LABEL_PROP);
 
 			if (xValue === null) {
 				return [];
@@ -188,9 +204,18 @@ export class ChartView extends BasesView {
 	}
 
 	getYDomainOverrides(): YDomainOverrides {
-		const min = this.config.get(CHART_SETTINGS.MIN_Y_OVERRIDE);
-		const max = this.config.get(CHART_SETTINGS.MAX_Y_OVERRIDE);
-		const synced = Boolean(this.config.get(CHART_SETTINGS.SYNC_Y_AXES));
+		const config = this.config;
+		if (!config) {
+			return {
+				min: null,
+				max: null,
+				synced: false,
+			};
+		}
+
+		const min = config.get(CHART_SETTINGS.MIN_Y_OVERRIDE);
+		const max = config.get(CHART_SETTINGS.MAX_Y_OVERRIDE);
+		const synced = Boolean(config.get(CHART_SETTINGS.SYNC_Y_AXES));
 
 		return {
 			min: parseConfigAsNumber(min),
@@ -200,7 +225,12 @@ export class ChartView extends BasesView {
 	}
 
 	getAdvancedOverrides(): AdvancedOverridesResult {
-		const raw = this.config.get(CHART_SETTINGS.ECHARTS_OVERRIDES);
+		const config = this.config;
+		if (!config) {
+			return { overrides: null, errors: [] };
+		}
+
+		const raw = config.get(CHART_SETTINGS.ECHARTS_OVERRIDES);
 		const errors: string[] = [];
 
 		if (raw == null) {

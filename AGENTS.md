@@ -6,7 +6,6 @@ This file governs agent behavior for the repository. Obey it unless superseded b
 
 - Use `.codex/steering/product.md`, `.codex/steering/tech.md`, `.codex/steering/structure.md` as the authoritative sources for product, tech, and structure guidance.
 - Use `.codex/steering/context7-guidance.md` for Context7 MCP usage rules when collecting current Svelte, Svelte-echarts, echarts, or Obsidian API, new beta api for bases references.
-- Use `.codex/steering/runtime-debugging.md` to coordinate runtime debugging flows that rely on `automation/dev` helpers and `.vscode` tasks.
 - Reference Steering sections directly in outputs; do not restate their contents here or in task responses.
 - Treat Steering files as read-only unless following the sanctioned update process defined by project owners.
 

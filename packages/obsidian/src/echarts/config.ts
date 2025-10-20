@@ -31,16 +31,21 @@ export function buildChartConfig(view: ChartView, options: ChartConfigOptions): 
 }
 
 function resolveXAxisLabel(view: ChartView): string {
-	const xField = view.config.getAsPropertyId(CHART_SETTINGS.X);
+	const config = view.config;
+	if (!config) {
+		return '';
+	}
+
+	const xField = config.getAsPropertyId(CHART_SETTINGS.X);
 	if (!xField) {
 		return '';
 	}
-	const label = view.config.getDisplayName(xField);
+	const label = config.getDisplayName(xField);
 	return label ? `${label} →` : '';
 }
 
 function resolveMultiChartMode(view: ChartView): MultiChartMode {
-	const raw = view.config.get(CHART_SETTINGS.MULTI_CHART);
+	const raw = view.config?.get(CHART_SETTINGS.MULTI_CHART);
 	if (raw === MultiChartMode.GROUP || raw === MultiChartMode.PROPERTY) {
 		return raw;
 	}
@@ -48,7 +53,7 @@ function resolveMultiChartMode(view: ChartView): MultiChartMode {
 }
 
 function resolveBooleanSetting(view: ChartView, key: (typeof CHART_SETTINGS)[keyof typeof CHART_SETTINGS], defaultValue: boolean): boolean {
-	const raw = view.config.get(key);
+	const raw = view.config?.get(key);
 	if (raw === undefined || raw === null) {
 		return defaultValue;
 	}

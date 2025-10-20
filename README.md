@@ -40,6 +40,15 @@ Within a chart, data points are colored using a `Group by` sort (Base's `Sort` m
 
 Currently only via BRAT.
 
+## Runtime Debug Workflow
+
+For contributors working with the streaming debug environment introduced in `.codex/steering/runtime-debugging.md`, run `bun run debug:runtime`. Use `bun run debug:runtime:dry-run` to exercise the orchestration without launching Bun or Obsidian. Append `--no-relaunch` if you want the harness to attach only to an already-running Obsidian instance; closing Obsidian while the workflow runs will leave the watcher in a “waiting-for-obsidian” state until you reopen it. The command exposes:
+
+- A WebSocket feed (defaults to `ws://127.0.0.1:48321`) that streams `snapshot`, `event-batch`, and `tracker` payloads for automation clients.
+- An optional interactive shell (`--interactive`) with commands such as `list`, `resolve <id> [note]`, and `tracker` to manage the runtime error queue.
+
+Refer to the steering guide for the full workflow and troubleshooting tips.
+
 ## License
 
 [GPL-3.0](https://choosealicense.com/licenses/gpl-3.0/)

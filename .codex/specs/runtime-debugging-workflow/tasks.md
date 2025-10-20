@@ -1,0 +1,47 @@
+# Implementation Plan
+
+- [x] 1. Register runtime debug entry point
+  - Add `debug:runtime` script to `package.json` pointing to new Bun entry.
+  - Create `automation/dev/runtimeDebug.ts` that initializes the orchestrator `main()`.
+  - _Requirements: 1.1, 1.3_
+- [x] 1.1 Create orchestrator skeleton
+  - Scaffold `RuntimeDebugOrchestrator` class with `start`/`stop` lifecycle and signal handling.
+  - Wire stdout readiness message and steering directive emission placeholders.
+  - _Requirements: 1.1, 4.1, 4.2_
+- [x] 2. Implement build watcher process wrapper
+  - Add `DevWatcherProcess` module using `Bun.spawn` to run `bun run dev` without awaiting exit.
+  - Emit normalized stream events and detect compilation errors within five seconds.
+  - _Requirements: 2.1, 2.2, 4.1_
+- [x] 2.1 Confirm clean-build acknowledgement flow
+  - Extend watcher wrapper to detect transition from error state to clean build and notify orchestrator.
+  - _Requirements: 2.3_
+- [x] 3. Implement Obsidian console attachment
+  - Create `ObsidianConsoleProcess` launching or attaching to Obsidian, focusing `bases-preview.base`.
+  - Hook Chrome DevTools Protocol client to forward runtime logs.
+  - _Requirements: 3.1, 3.2, 3.3_
+- [x] 3.1 Add reconnection and URI helpers
+  - Implement retry logic and URI commands to reuse existing Obsidian sessions.
+  - _Requirements: 3.3, 4.2_
+- [x] 4. Build StreamMultiplexer and event bus
+  - Normalize build/runtime events, buffer with backpressure handling, expose subscription API and WebSocket bridge.
+  - _Requirements: 4.1, 4.2_
+- [x] 5. Implement RuntimeErrorTracker
+  - Track active/resolved error contexts, deduplicate, persist state snapshot to `.codex/tmp/runtime-debug-state.json`.
+  - _Requirements: 5.1, 5.2, 5.3_
+- [x] 5.1 Add resolution note APIs
+  - Provide `markResolved` interface and state update emission for agent clients.
+  - _Requirements: 5.3_
+- [x] 6. Surface steering directives
+  - Create `.codex/steering/runtime-debugging.md` and `SteeringDirectiveEmitter` to summarize instructions on startup.
+  - _Requirements: 1.3_
+- [x] 7. Expose agent integration channel
+  - Add WebSocket server bridging event bus to agent subscribers with batching.
+  - Implement optional `--interactive` CLI REPL for human operators via `RuntimeDebugSession`.
+  - _Requirements: 4.1, 4.2, 5.1_
+- [ ] 8. Testing coverage
+  - Write unit tests in `tests/runtime-debug/` for watcher, console process, error tracker, and multiplexer behavior.
+  - Add integration test harness with mock processes and headless CDP stub.
+  - _Requirements: 2.2, 3.2, 5.2_
+- [ ] 8.1 Add dry-run validation script
+  - Augment entry point with `--dry-run` flag spawning mock processes for smoke testing.
+  - _Requirements: 1.1, 4.1_
