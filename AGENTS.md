@@ -4,8 +4,11 @@ This file governs agent behavior for the repository. Obey it unless superseded b
 
 ## Steering Documents
 
-- Use `.codex/steering/product.md`, `.codex/steering/tech.md`, `.codex/steering/structure.md` as the authoritative sources for product, tech, and structure guidance.
-- Use `.codex/steering/context7-guidance.md` for Context7 MCP usage rules when collecting current Svelte, Svelte-echarts, echarts, or Obsidian API, new beta api for bases references.
+- `.codex/steering/product.md` — Product purpose, supported Bases chart views, and key behaviour requirements.
+- `.codex/steering/tech.md` — Tooling stack, build/test commands, and integration guidance for Svelte, Bun, and Vite.
+- `.codex/steering/structure.md` — Repository layout, source ownership boundaries, and import conventions.
+- `.codex/steering/context7-guidance.md` — Context7 MCP usage rules when collecting current Svelte, Svelte-echarts, echarts, or Obsidian API, new beta API for Bases references.
+- `.codex/steering/runtime-debugging.md` — Runtime debug workflow, streaming harness expectations, and troubleshooting steps.
 - Reference Steering sections directly in outputs; do not restate their contents here or in task responses.
 - Treat Steering files as read-only unless following the sanctioned update process defined by project owners.
 

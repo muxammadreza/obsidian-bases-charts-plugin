@@ -182,7 +182,7 @@ export class GroupSeparatedData extends AbstractDataWrapper<string, BasesPropert
 	}
 
 	getGroupIdentifiers(): BasesPropertyId[] {
-		return this.view.data.properties;
+		return this.view.data?.properties ?? [];
 	}
 
 	getChartName(chartIndex: number): string {
@@ -191,13 +191,16 @@ export class GroupSeparatedData extends AbstractDataWrapper<string, BasesPropert
 
 	getGroupName(groupIndex: number): string {
 		const groupId = this.getGroupIdentifiers()[groupIndex];
-		return this.view.config.getDisplayName(groupId) ?? `Group ${groupIndex + 1}`;
+		if (!groupId) {
+			return `Group ${groupIndex + 1}`;
+		}
+		return this.view.config?.getDisplayName(groupId) ?? `Group ${groupIndex + 1}`;
 	}
 }
 
 export class PropertySeparatedData extends AbstractDataWrapper<BasesPropertyId, string> {
 	getChartIdentifiers(): BasesPropertyId[] {
-		return this.view.data.properties;
+		return this.view.data?.properties ?? [];
 	}
 
 	getGroupIdentifiers(): string[] {
@@ -209,7 +212,10 @@ export class PropertySeparatedData extends AbstractDataWrapper<BasesPropertyId, 
 
 	getChartName(chartIndex: number): string {
 		const chartId = this.getChartIdentifiers()[chartIndex];
-		return this.view.config.getDisplayName(chartId) ?? `Chart ${chartIndex + 1}`;
+		if (!chartId) {
+			return `Chart ${chartIndex + 1}`;
+		}
+		return this.view.config?.getDisplayName(chartId) ?? `Chart ${chartIndex + 1}`;
 	}
 
 	getGroupName(groupIndex: number): string {

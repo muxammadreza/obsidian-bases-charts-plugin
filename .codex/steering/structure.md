@@ -1,7 +1,8 @@
-- Keep plugin source within `packages/obsidian/src`; expose new entry points by wiring them into `main.ts` alongside the existing chart registrations.
-- Store Svelte UI under `packages/obsidian/src/charts`; follow the PascalCase filename pattern (`ScatterPlot.svelte`, `PlotGridItem.svelte`) when adding views or shared snippets.
-- Centralize data shaping helpers in `packages/obsidian/src/ChartData.ts` and parsing utilities in `packages/obsidian/src/utils/utils.ts`; extend those modules instead of scattering duplicate logic.
-- Maintain shared styling in `packages/obsidian/src/styles.css` so plots inherit the same Obsidian-compatible variables.
-- Use `automation/` for build-time tooling (`automation/build`, `automation/release.ts`, `automation/stats.ts`) and avoid mixing runtime code into that tree.
-- Put test fixtures and Bun tests inside `tests/`; reuse the existing helper stubs (`tests/obsidianMock.ts`, `tests/happydom.ts`) when expanding coverage.
-- Treat `exampleVault/` and `exampleData/` as sample assets for local verification; keep generated bundles out of these directories.
+# Structure Guidance
+- Treat `packages/obsidian/src` as the source of truth for plugin code: `main.ts` registers Bases views, `ChartView.ts` coordinates data + events, `charts/` holds Svelte renderers, `echarts/` encapsulates option builders, and `utils/utils.ts` centralizes value parsing + color constants.
+- Keep shared data types and wrappers in `ChartData.ts`; extend those helpers instead of re-implementing grouping or Y-domain logic elsewhere.
+- Organize UI into Svelte components under `charts/`, pairing layout shells like `PlotGrid.svelte` with per-chart renderers such as `ScatterPlot.svelte`; route chart-specific props through the `buildOption` pattern already established there.
+- Place automation workflows in `automation/`: build banners live in `automation/build`, release orchestration stays in `automation/release.ts`, and runtime debugging assets sit under `automation/dev` (process orchestration, stream multiplexer, focus hooks).
+- Put tests under `tests/`, mirroring source structure (`tests/charts`, `tests/echarts`, etc.) and reusing setup shims (`tests/happydom.ts`, `tests/svelteLoader.ts`, `tests/obsidianMock.ts`); add new specs alongside related source modules.
+- Use `exampleVault/` and `exampleData/` strictly for sample data when manually validating chart outputs; avoid mixing executable code into those folders.
+- Honor the `packages` path alias in imports to keep cross-module references consistent; do not introduce relative parent traversals that bypass the alias.

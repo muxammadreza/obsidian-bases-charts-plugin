@@ -1,57 +1,43 @@
 # Runtime Debugging Steering Guide
 
-## Overview
+## Primary Workflow
 
-The `bun run debug:runtime` workflow launches a dual-stream debugging environment. One stream runs `bun run dev` to capture compilation output, and the other attaches to the Obsidian developer console focused on `bases-preview.base`. The AI agent watches both feeds to diagnose build and runtime issues in real time.
+- Run `bun run debug:runtime` (wired through `automation/dev/runtimeDebug.ts`) and wait for `RuntimeDebugOrchestrator` to log `[runtime-debug] Runtime debugging workflow initialized; live streams active.` before acting on output.
+- Keep `bases-preview.base` present in the active vault. `focusBasesPreview()` issues `obsidian://open?file=bases-preview.base`; failed launches surface as `[obsidian-console] Failed to focus bases-preview.base` warnings.
+- Expect the startup sequence `build-status: starting` → `runtime-status: attaching` → `runtime-status: attached`. If you pass `--no-relaunch`, `ObsidianConsoleProcess` skips running `open -a Obsidian --devtools --remote-debugging-port=39200` and only attaches.
+- Interrupt the orchestrator with `SIGINT` or `SIGTERM`; `RuntimeDebugOrchestrator.stop()` tears down participants in reverse order so the Bun watcher exits before the DevTools bridge.
 
-## Quick Start
+## Build Stream Signals
 
-1. Run `bun run debug:runtime`.
-2. Monitor the build feed:
-   - `info` messages mean the watcher is compiling.
-   - `warn`/`error` messages highlight compile failures.
-3. Monitor the runtime feed:
-   - `runtime-console` surfaces `console.*` calls.
-   - `runtime-log` captures log entries and stack traces.
-4. When an error appears:
-   - Inspect the `RuntimeErrorTracker` entry.
-   - Apply code fixes.
-   - Wait for a clean build (`build-clean`).
-   - Verify that runtime errors resolve.
-5. Use `markResolved` via the agent REPL or API once the error is fixed.
+- `DevWatcherProcess` in `automation/dev/processes/DevWatcherProcess.ts` parses Bun output. A compilation failure produces paired events: a `build-log` on `stderr` and a `build-error` forwarded to the tracker. Look for `[dev-watcher]` prefixed logs and `[tracker] new error build:…` notifications.
+- A clean rebuild triggers `type: 'build-status', status: 'clean'`, which renders as `[build-clean] Build cycle completed without errors.` in `logStreamEvent`. Wait for this after applying fixes before re-checking runtime errors.
+- If the watcher exits (`status: 'exited'`), inspect the exit code printed in `[build-status] exited (exit=<code>)`—non-zero codes usually indicate Bun command failures or missing dependencies under the current `cwd`.
 
-## Commands & Flags
+## Runtime Stream Signals
 
-- `bun run debug:runtime` — launches the orchestrator with streams and tracker.
-- `bun run debug:runtime:dry-run` — emits synthetic build/runtime events without starting Bun or Obsidian.
-- Append `--no-relaunch` to attach only to an already-running Obsidian instance (the workflow will not restart Obsidian if you close it). If Obsidian closes while the workflow is running, the watcher stays in a reconnecting state and resumes once you reopen the app.
-- `RUNTIME_DEBUG_STREAM_PORT` — override the WebSocket port (default `48321`).
-- `RUNTIME_DEBUG_STREAM_HOST` — override the WebSocket host (default `127.0.0.1`).
-- `OBSIDIAN_RUNTIME_VAULT` — set the vault name for the Obsidian URI focus command.
+- `ObsidianConsoleProcess` (`automation/dev/processes/ObsidianConsoleProcess.ts`) emits `runtime-status` changes: `attaching`, `attached`, `detached`, or `error`. A reconnect loop prints `detail: waiting-for-obsidian`; reopen Obsidian or restart the workflow if it stalls there.
+- Console output is normalized through CDP: `console.error` and thrown exceptions raise `runtime-error` events with stack traces combined from `exceptionThrown`. Info and warn logs arrive as `runtime-log` events; both include `metadata.origin` set to `console` or `log` so you can distinguish `Runtime` vs `Log` domains.
+- When the CDP channel drops, `scheduleReconnect()` attempts to reattach and logs `[runtime-status] attaching (waiting-for-obsidian)`. Persistent failures emit `[runtime-status] error (reconnect-failed:…)`; resolve the underlying port conflict and rerun the workflow.
 
-## WebSocket Protocol
+## Tracking Errors
 
-- `snapshot` message contains buffered events and tracker state.
-- `event-batch` message streams grouped events for coalesced updates.
-- `tracker` message shares updated error tracker snapshots.
-- `command-response` message returns results for agent-issued commands (`resolve`, `list`).
+- `RuntimeErrorTracker` (`automation/dev/RuntimeErrorTracker.ts`) stores active issues in `.codex/tmp/runtime-debug-state.json`. Each error signature combines `source`, `origin`, and the full message, so repeated stack traces roll into the same entry.
+- Use the interactive prompt (`bun run debug:runtime --interactive`) or the WebSocket command bridge to run `resolve <error-id> [note]`. This calls `markResolved` and immediately rebroadcasts the snapshot via `StreamMultiplexer.broadcastTracker`.
+- `RuntimeErrorTracker` records every error message under `history`. When evaluating regressions, inspect `history` timestamps to confirm whether a fix actually stops new events or just clears the active flag momentarily.
 
-## Error Resolution Workflow
+## WebSocket Interface
 
-1. Identify new errors via tracker notifications (`[tracker] new error`).
-2. Inspect the associated source (`build` vs `runtime`) and origin.
-3. Apply code changes and re-run builds automatically via watcher.
-4. Confirm runtime resolution.
-5. Use the REPL command `resolve <error-id> [note]` to mark resolved.
-6. Tracker broadcasts updates to all subscribers; errors move to resolved list.
+- `StreamMultiplexer.startWebSocketServer()` serves the feed at `ws://127.0.0.1:48321` by default. Override with `RUNTIME_DEBUG_STREAM_HOST` or `RUNTIME_DEBUG_STREAM_PORT` before launching.
+- On connect, clients receive `{ type: 'snapshot', events, tracker }`. Ongoing traffic batches into `{ type: 'event-batch', events: [...] }` within ~100 ms windows.
+- Send `{ "type": "resolve", "id": "<error-id>", "note": "…" }` or `{ "type": "list" }` to the command channel; responses arrive as `{ type: 'command-response', payload }`. Errors return `{ type: 'command-error', error }`.
 
-## Safety & Recovery
+## Dry Run Mode
 
-- The orchestrator auto-reconnects to Obsidian if the DevTools tunnel drops.
-- Restart the workflow if both streams exit unexpectedly.
-- State snapshots live in `.codex/tmp/runtime-debug-state.json`; delete or archive between sessions if you want a fresh run.
+- `bun run debug:runtime:dry-run` swaps in `createDryRunParticipants` from `automation/dev/dryRunParticipants.ts`. Expect alternating `Dry-run build watcher active…` and `Dry-run simulated runtime error.` messages so you can verify dashboards without touching Obsidian.
+- The dry run still persists tracker state; clear `.codex/tmp/runtime-debug-state.json` if you want a clean slate before real sessions.
 
-## Contact Points
+## Recovery Patterns
 
-- Multiplexer WebSocket: `ws://<host>:<port>` (defaults to `127.0.0.1:48321`).
-- REPL port is exposed only in interactive mode (TBD).
+- If both participants stop (`build-status: stopped` and `runtime-status: detached`), restart the workflow; the orchestrator only auto-reconnects the runtime side.
+- When state corruption is suspected, remove `.codex/tmp/runtime-debug-state.json`; `RuntimeErrorTracker.load()` will recreate it and log `Failed to read state file` once before continuing.
+- Use `resolve` commands rather than deleting the state file mid-session—`markResolved` keeps a resolved history that feeds downstream analytics in the steering tooling.

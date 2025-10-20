@@ -1,6 +1,7 @@
-- Present Bases Charts as an Obsidian Bases plugin that adds scatter, line, and bar chart views through the registrations in `packages/obsidian/src/main.ts`.
-- Highlight that the plugin turns Base query results into interactive charts so users can spot trends quickly and open the underlying note by clicking a plotted point, relying on `ChartView.openFile` in `packages/obsidian/src/ChartView.ts`.
-- Emphasize the two multi-chart segmentation modes (`MultiChartMode.GROUP` vs `MultiChartMode.PROPERTY`) and explain how they organize data, referencing the logic inside `ChartView.processData` (`packages/obsidian/src/ChartView.ts`).
-- Call out that only fields producing numeric Y values are charted; mention the `parseValueAsNumber` guard in `packages/obsidian/src/utils/utils.ts` and advise users to choose number-compatible properties.
-- Surface the optional extras—label property support for scatter plots, Y-axis syncing and overrides, and bar-chart percentage/label toggles—driven by `CHART_SETTINGS` in `packages/obsidian/src/ChartView.ts` and `BarPlot.svelte`.
-- Convey the visual identity: the plugin leans on SveltePlot components plus the Obsidian palette defined in `packages/obsidian/src/utils/utils.ts`, so design tweaks should respect that aesthetic.
+# Product Guidance
+- Describe the plugin as an Obsidian Bases extension that registers scatter, line, and bar chart views via `packages/obsidian/src/main.ts` so users can visualize Base data without leaving Obsidian.
+- Emphasize multi-chart support driven by `ChartView.processData` (see `packages/obsidian/src/ChartView.ts`) where grouping either splits charts by selected Y properties or Base groupings.
+- Note that X-axis values must resolve through `parseValueAsX` and Y-axis series must parse as numbers (`packages/obsidian/src/utils/utils.ts`); highlight that non-numeric Y data is ignored rather than coerced.
+- Call out the value proposition: interactive charts inherit Obsidian themes, use color palettes from `OBSIDIAN_COLOR_PALETTE`, and respect Base-configured grouping so analysts gain visual summaries with minimal setup.
+- Remind contributors to preserve advanced overrides (labels, percentages, Y-domain sync) surfaced in `ChartView.getAdvancedOverrides` and `buildChartConfig` so users can tune visual output without code changes.
+- When documenting features, reference the user workflow from README.md (Base creation → choose view → configure axes) and align new UX with that funnel.
