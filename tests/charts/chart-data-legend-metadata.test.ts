@@ -15,8 +15,8 @@ function createStubView(options: StubViewOptions = {}): ChartView {
 		data: properties ? { properties } : undefined,
 		config: displayNames
 			? {
-				getDisplayName: (id: BasesPropertyId) => displayNames[String(id)],
-			}
+					getDisplayName: (id: BasesPropertyId) => displayNames[String(id)],
+				}
 			: undefined,
 	} as unknown as ChartView;
 }

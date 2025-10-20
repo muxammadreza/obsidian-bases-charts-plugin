@@ -37,10 +37,7 @@ export default defineConfig(async ({ mode }) => {
 		resolve: {
 			alias: {
 				packages: path.resolve(__dirname, './packages'),
-				'@ticatec/uniface-echarts/ChartPanel.svelte': path.resolve(
-					__dirname,
-					'./node_modules/@ticatec/uniface-echarts/dist/ChartPanel.svelte',
-				),
+				'@ticatec/uniface-echarts/ChartPanel.svelte': path.resolve(__dirname, './node_modules/@ticatec/uniface-echarts/dist/ChartPanel.svelte'),
 			},
 		},
 		build: {

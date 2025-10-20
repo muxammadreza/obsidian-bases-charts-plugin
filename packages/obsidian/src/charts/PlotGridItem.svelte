@@ -5,35 +5,21 @@
 	import ConfigStackHost from './config-stack/ConfigStackHost.svelte';
 	import { cloneConfigStackState, createEmptyConfigStackState } from './config-stack/state';
 	import { applyStackStateToOption, cloneOption } from './config-stack/optionTransforms';
-	import type {
-		ConfigStackApplyDetail,
-		ConfigStackRevertDetail,
-		ConfigStackState,
-		ConfigStackToggleDetail,
-	} from './config-stack/types';
+	import type { ConfigStackApplyDetail, ConfigStackRevertDetail, ConfigStackState } from './config-stack/types';
 	import EChartsPlot from './EChartsPlot.svelte';
 
 	interface Props {
 		view: ChartView;
-	chartName: string;
-	xAxisLabel: string;
-	option: EChartsOption;
-	errors?: string[];
-	forceRender?: boolean;
-	chartIdentifier: string;
-	stackState?: ConfigStackState;
-}
+		chartName: string;
+		xAxisLabel: string;
+		option: EChartsOption;
+		errors?: string[];
+		forceRender?: boolean;
+		chartIdentifier: string;
+		stackState?: ConfigStackState;
+	}
 
-let {
-	view,
-	chartName,
-	xAxisLabel,
-	option,
-	errors = [],
-	forceRender = false,
-	chartIdentifier,
-	stackState: providedStackState,
-}: Props = $props();
+	let { view, chartName, xAxisLabel, option, errors = [], forceRender = false, chartIdentifier, stackState: providedStackState }: Props = $props();
 
 	let width = $state(0);
 	let height = $state(0);
@@ -81,20 +67,18 @@ let {
 	function handleConfigApply(event: CustomEvent<ConfigStackApplyDetail>): void {
 		activeStackState = cloneConfigStackState(event.detail.state);
 		isDirty = true;
-		currentOption = applyStackStateToOption(baseOption, activeStackState);
-		view.events?.trigger?.('config-stack:apply', event.detail);
+		view.saveConfigStackState(event.detail.chartId, event.detail.state);
 	}
 
 	function handleConfigRevert(event: CustomEvent<ConfigStackRevertDetail>): void {
 		baselineStackState = cloneConfigStackState(event.detail.state);
 		activeStackState = cloneConfigStackState(event.detail.state);
 		isDirty = false;
-		currentOption = applyStackStateToOption(baseOption, activeStackState);
-		view.events?.trigger?.('config-stack:revert', event.detail);
+		view.saveConfigStackState(event.detail.chartId, event.detail.state);
 	}
 
-	function handleConfigToggle(event: CustomEvent<ConfigStackToggleDetail>): void {
-		view.events?.trigger?.('config-stack:toggle', event.detail);
+	function handleConfigChange(event: CustomEvent<ConfigStackState>): void {
+		activeStackState = cloneConfigStackState(event.detail);
 	}
 </script>
 
@@ -109,10 +93,11 @@ let {
 		{/if}
 		<ConfigStackHost
 			chartId={chartIdentifier}
-			initialState={baselineStackState}
+			state={activeStackState}
+			baseline={baselineStackState}
 			on:applyConfig={handleConfigApply}
 			on:revert={handleConfigRevert}
-			on:toggle={handleConfigToggle}
+			on:change={handleConfigChange}
 		></ConfigStackHost>
 		<EChartsPlot
 			option={currentOption}

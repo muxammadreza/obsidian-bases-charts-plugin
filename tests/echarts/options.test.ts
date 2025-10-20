@@ -146,9 +146,7 @@ describe('ECharts option builders', () => {
 describe('option builder validation errors', () => {
 	test('returns pipeline errors for invalid numeric data', () => {
 		const view = createViewStub();
-		const processed = [
-			{ x: 1, y: Number.NaN, groupIndex: 0, chartIndex: 0, file: 'notes/a.md' },
-		];
+		const processed = [{ x: 1, y: Number.NaN, groupIndex: 0, chartIndex: 0, file: 'notes/a.md' }];
 		const wrapper = new GroupSeparatedData(view, processed, ['Only']);
 		const config = buildChartConfig(view, { chartType: 'scatter' });
 		const result = buildScatterOptions(wrapper, 0, config);

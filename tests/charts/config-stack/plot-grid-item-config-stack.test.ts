@@ -24,7 +24,7 @@ function getLatestOption(): EChartsOption | undefined {
 }
 
 describe('PlotGridItem config stack integration', () => {
-	test('updates legend visibility through config stack patches', async () => {
+	test('updates legend visibility through config stack changes', async () => {
 		(globalThis as { __mockLatestOption?: EChartsOption }).__mockLatestOption = undefined;
 		const events: Array<{ type: string; detail: unknown }> = [];
 		const view = {

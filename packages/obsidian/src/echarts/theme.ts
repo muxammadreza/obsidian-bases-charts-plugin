@@ -1,5 +1,5 @@
 import * as echarts from 'echarts';
-import { OBSIDIAN_COLOR_PALETTE, OBSIDIAN_DEFAULT_SINGLE_COLOR } from 'packages/obsidian/src/utils/utils';
+import { getResolvedObsidianPalette, getResolvedAccentColor, resolveCssColor } from 'packages/obsidian/src/utils/utils';
 
 const THEME_NAME = 'obsidian-bases-charts';
 let registered = false;
@@ -26,14 +26,14 @@ export function getEChartsThemeDefinition(): echarts.EChartsCoreOption {
 
 function buildThemeDefinition(): echarts.EChartsCoreOption {
 	return {
-		color: [...OBSIDIAN_COLOR_PALETTE, OBSIDIAN_DEFAULT_SINGLE_COLOR(null)],
+		color: [...getResolvedObsidianPalette(), getResolvedAccentColor()],
 		backgroundColor: 'transparent',
 		textStyle: {
-			color: 'var(--bases-charts-text)',
+			color: resolveCssColor('var(--bases-charts-text)', '#e0e3e8'),
 		},
 		axisPointer: {
 			lineStyle: {
-				color: 'var(--bases-charts-grid-hover)',
+				color: resolveCssColor('var(--bases-charts-grid-hover)', 'rgba(224, 227, 232, 0.45)'),
 			},
 		},
 		tooltip: {
@@ -44,7 +44,7 @@ function buildThemeDefinition(): echarts.EChartsCoreOption {
 			},
 		},
 		grid: {
-			borderColor: 'var(--bases-charts-grid)',
+			borderColor: resolveCssColor('var(--bases-charts-grid)', 'rgba(224, 227, 232, 0.25)'),
 			containLabel: true,
 		},
 	};

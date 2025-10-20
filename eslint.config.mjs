@@ -42,6 +42,15 @@ export default tseslint.config(
 				'error',
 				{ argsIgnorePattern: '^_', destructuredArrayIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
 			],
+			'no-restricted-imports': [
+				'error',
+				{
+					paths: [
+						{ name: 'svelte-echarts', message: 'Legacy svelte-echarts wrappers are removed in favour of echarts6 runtime helpers (spec task 6).' },
+						{ name: 'svelteplot', message: 'Legacy SveltePlot dependencies are not permitted (spec task 6).' },
+					],
+				},
+			],
 			'@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports', fixStyle: 'separate-type-imports' }],
 
 			'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
@@ -63,6 +72,25 @@ export default tseslint.config(
 			'@typescript-eslint/no-inferrable-types': 'off',
 			'@typescript-eslint/explicit-function-return-type': ['warn'],
 			'@typescript-eslint/require-await': 'off',
+			'no-restricted-syntax': [
+				'error',
+				{
+					selector: "Identifier[name='ECHARTS_OVERRIDES']",
+					message: 'Legacy JSON override identifiers are deprecated; use config stack state (spec task 6).',
+				},
+				{
+					selector: "Literal[value='echarts-options-override']",
+					message: 'Legacy JSON override literals are deprecated; use config stack state (spec task 6).',
+				},
+				{
+					selector: "Identifier[name='SvelteECharts']",
+					message: 'Legacy svelte-echarts component usage is disallowed; migrate to echarts6 runtime helpers (spec task 6).',
+				},
+				{
+					selector: "Identifier[name='SveltePlot']",
+					message: 'Legacy SveltePlot usage is disallowed; migrate to echarts6 runtime helpers (spec task 6).',
+				},
+			],
 
 			...Object.keys(obsidianmd.rules).reduce((acc, ruleName) => {
 				acc[`obsidianmd/${ruleName}`] = 'error';

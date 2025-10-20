@@ -1,17 +1,8 @@
 import { CMD_FMT } from '../utils/shellUtils';
-import {
-	LifecycleParticipant,
-	RuntimeDebugOrchestrator,
-	RuntimeDebugOrchestratorOptions,
-	SteeringDirectiveEmitter,
-} from './RuntimeDebugOrchestrator';
+import { LifecycleParticipant, RuntimeDebugOrchestrator, RuntimeDebugOrchestratorOptions, SteeringDirectiveEmitter } from './RuntimeDebugOrchestrator';
 import { DevWatcherProcess } from './processes/DevWatcherProcess';
 import { ObsidianConsoleProcess } from './processes/ObsidianConsoleProcess';
-import {
-	StreamMultiplexer,
-	type StreamEvent,
-	DEFAULT_STREAM_PORT,
-} from './StreamMultiplexer';
+import { StreamMultiplexer, type StreamEvent, DEFAULT_STREAM_PORT } from './StreamMultiplexer';
 import { RuntimeErrorTracker } from './RuntimeErrorTracker';
 import { RuntimeSteeringDirectiveEmitter } from './SteeringDirectiveEmitter';
 import readline from 'node:readline';
@@ -51,20 +42,18 @@ async function focusBasesPreview(): Promise<void> {
 function logStreamEvent(event: StreamEvent): void {
 	if (event.kind === 'log') {
 		const isBuild = event.source === 'build';
-		const origin = isBuild
-			? 'build'
-			: `runtime-${String(event.metadata?.origin ?? 'log')}`;
+		const origin = isBuild ? 'build' : `runtime-${String(event.metadata?.origin ?? 'log')}`;
 		const prefixColor = isBuild
 			? event.level === 'info'
 				? CMD_FMT.FgCyan
 				: event.level === 'warn'
-				? CMD_FMT.FgYellow
-				: CMD_FMT.FgRed
+					? CMD_FMT.FgYellow
+					: CMD_FMT.FgRed
 			: event.level === 'info'
-			? CMD_FMT.FgBlue
-			: event.level === 'warn'
-			? CMD_FMT.FgYellow
-			: CMD_FMT.FgRed;
+				? CMD_FMT.FgBlue
+				: event.level === 'warn'
+					? CMD_FMT.FgYellow
+					: CMD_FMT.FgRed;
 		const text = `${prefixColor}[${origin}]${CMD_FMT.Reset} ${event.message}`;
 		if (event.level === 'error') {
 			console.error(text);
@@ -78,9 +67,7 @@ function logStreamEvent(event: StreamEvent): void {
 
 	if (event.source === 'build') {
 		if (event.status === 'clean') {
-			console.log(
-				`${CMD_FMT.FgGreen}[build-clean]${CMD_FMT.Reset} Build cycle completed without errors.`,
-			);
+			console.log(`${CMD_FMT.FgGreen}[build-clean]${CMD_FMT.Reset} Build cycle completed without errors.`);
 			return;
 		}
 		const details: string[] = [];
@@ -126,10 +113,7 @@ export function createRuntimeDebugOrchestrator(
 	});
 }
 
-function createDefaultParticipants(
-	multiplexer: StreamMultiplexer,
-	options: { autoLaunch: boolean },
-): LifecycleParticipant[] {
+function createDefaultParticipants(multiplexer: StreamMultiplexer, options: { autoLaunch: boolean }): LifecycleParticipant[] {
 	const devWatcher = new DevWatcherProcess({ cwd: process.cwd() });
 	devWatcher.on(event => multiplexer.ingestBuildEvent(event));
 
@@ -143,19 +127,31 @@ function createDefaultParticipants(
 }
 
 function renderErrorSummary(snapshot: ReturnType<RuntimeErrorTracker['getSnapshot']>): string {
-	const active = snapshot.activeErrors.map(error => `- ${error.id} [${error.source}] ${error.message}`).join('\n');
-	const resolved = snapshot.resolvedErrors.slice(0, 5).map(error => `- ${error.id} (resolved) ${error.message}`).join('\n');
-	const activeSection = active ? `Active errors:\n${active}` : 'No active errors.';
-	const resolvedSection = snapshot.resolvedErrors.length > 0
-		? `Recently resolved:\n${resolved}${snapshot.resolvedErrors.length > 5 ? '\n…' : ''}`
-		: 'No resolved errors yet.';
+	const describeSeverity = (severity: 'error' | 'warning'): string => (severity === 'warning' ? 'warn' : 'error');
+
+	const activeLines = snapshot.activeErrors
+		.map(error => {
+			const severityTag = describeSeverity(error.severity);
+			return `- ${error.id} [${error.source}/${severityTag}] ${error.message}`;
+		})
+		.join('\n');
+
+	const resolvedLines = snapshot.resolvedErrors
+		.slice(0, 5)
+		.map(error => {
+			const severityTag = describeSeverity(error.severity);
+			return `- ${error.id} (resolved ${severityTag}) ${error.message}`;
+		})
+		.join('\n');
+	const activeSection = activeLines ? `Active errors:\n${activeLines}` : 'No active errors.';
+	const resolvedSection =
+		snapshot.resolvedErrors.length > 0
+			? `Recently resolved:\n${resolvedLines}${snapshot.resolvedErrors.length > 5 ? '\n…' : ''}`
+			: 'No resolved errors yet.';
 	return `${activeSection}\n${resolvedSection}`;
 }
 
-function startInteractiveSession(
-	errorTracker: RuntimeErrorTracker,
-	multiplexer: StreamMultiplexer,
-): () => Promise<void> {
+function startInteractiveSession(errorTracker: RuntimeErrorTracker, multiplexer: StreamMultiplexer): () => Promise<void> {
 	const rl = readline.createInterface({
 		input: process.stdin,
 		output: process.stdout,
@@ -196,11 +192,7 @@ function startInteractiveSession(
 			multiplexer.broadcastTracker(errorTracker.getSnapshot());
 			console.log(`${CMD_FMT.FgGreen}[runtime-debug]${CMD_FMT.Reset} Marked ${id} resolved.`);
 		} catch (error) {
-			console.error(
-				`${CMD_FMT.FgRed}[runtime-debug]${CMD_FMT.Reset} ${
-					error instanceof Error ? error.message : String(error)
-				}`,
-			);
+			console.error(`${CMD_FMT.FgRed}[runtime-debug]${CMD_FMT.Reset} ${error instanceof Error ? error.message : String(error)}`);
 		}
 	};
 
@@ -297,17 +289,13 @@ export async function main(): Promise<void> {
 		}
 	});
 
-	const participants = dryRun
-		? createDryRunParticipants({ multiplexer })
-		: createDefaultParticipants(multiplexer, { autoLaunch: autoLaunchObsidian });
+	const participants = dryRun ? createDryRunParticipants({ multiplexer }) : createDefaultParticipants(multiplexer, { autoLaunch: autoLaunchObsidian });
 	const orchestrator = createRuntimeDebugOrchestrator(multiplexer, steeringEmitter, participants);
 
 	const relayEvent = (event: StreamEvent) => {
 		logStreamEvent(event);
 		errorTracker.recordStreamEvent(event).catch(err => {
-			console.error(
-				`${CMD_FMT.FgRed}[tracker]${CMD_FMT.Reset} failed to record event: ${err instanceof Error ? err.message : String(err)}`,
-			);
+			console.error(`${CMD_FMT.FgRed}[tracker]${CMD_FMT.Reset} failed to record event: ${err instanceof Error ? err.message : String(err)}`);
 		});
 	};
 	const unsubscribeConsoleRelay = multiplexer.subscribe(relayEvent);
@@ -318,9 +306,7 @@ export async function main(): Promise<void> {
 		}
 		if (event.type === 'error-created') {
 			console.error(
-				`${CMD_FMT.FgRed}[tracker]${CMD_FMT.Reset} new error ${event.context.source}:${
-					event.context.origin ?? 'unknown'
-				} -> ${event.context.message}`,
+				`${CMD_FMT.FgRed}[tracker]${CMD_FMT.Reset} new error ${event.context.source}:${event.context.origin ?? 'unknown'} -> ${event.context.message}`,
 			);
 		}
 	});
@@ -340,9 +326,7 @@ export async function main(): Promise<void> {
 	}
 
 	const wsHandle = multiplexer.startWebSocketServer({ port: parsedPort, hostname });
-	console.log(
-		`${CMD_FMT.FgGreen}[runtime-debug]${CMD_FMT.Reset} WebSocket stream ready at ws://${wsHandle.hostname}:${wsHandle.port}`,
-	);
+	console.log(`${CMD_FMT.FgGreen}[runtime-debug]${CMD_FMT.Reset} WebSocket stream ready at ws://${wsHandle.hostname}:${wsHandle.port}`);
 
 	const closeInteractive = interactive ? startInteractiveSession(errorTracker, multiplexer) : undefined;
 
@@ -370,9 +354,7 @@ export async function main(): Promise<void> {
 		await orchestrator.start();
 	} catch (error) {
 		console.error(
-			`${CMD_FMT.FgRed}[runtime-debug]${CMD_FMT.Reset} failed to start: ${
-				error instanceof Error ? error.stack ?? error.message : String(error)
-			}`,
+			`${CMD_FMT.FgRed}[runtime-debug]${CMD_FMT.Reset} failed to start: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
 		);
 		await shutdown('startup-error', 1);
 	}
@@ -386,9 +368,7 @@ export async function main(): Promise<void> {
 if (import.meta.main) {
 	main().catch(error => {
 		console.error(
-			`${CMD_FMT.FgRed}[runtime-debug]${CMD_FMT.Reset} unexpected failure: ${
-				error instanceof Error ? error.stack ?? error.message : String(error)
-			}`,
+			`${CMD_FMT.FgRed}[runtime-debug]${CMD_FMT.Reset} unexpected failure: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
 		);
 		process.exit(1);
 	});

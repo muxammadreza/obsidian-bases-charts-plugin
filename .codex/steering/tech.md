@@ -1,4 +1,5 @@
 # Tech Guidance
+
 - Use Bun as the runtime for scripts (`package.json` scripts call `bun run`); install deps with `bun install` to match the lockfile.
 - Build the plugin through Vite per `vite.config.ts`; prefer `bun run build` for production and `bun run dev` for watch mode so the bundle lands in the configured Obsidian plugin directory during development.
 - Leverage the Svelte 5 toolchain configured in `svelte.config.js`; write components using `$state`/`$derived` patterns already present in `packages/obsidian/src/charts/*.svelte`.

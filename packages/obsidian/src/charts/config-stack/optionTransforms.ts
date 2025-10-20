@@ -1,5 +1,6 @@
 import type { ConfigStackState } from 'packages/obsidian/src/charts/config-stack/types';
 import type { EChartsOption } from 'packages/obsidian/src/echarts/options';
+import { resolveCssColor } from 'packages/obsidian/src/utils/utils';
 
 type MutableSeries = Record<string, unknown> & {
 	label?: Record<string, unknown>;
@@ -50,6 +51,9 @@ function cloneWithFunctions<T>(value: T): T {
 		return value;
 	}
 	if (Array.isArray(value)) {
+		// Deep cloning retains function references while preserving array shape. Casting is required
+		// because the generic type parameter cannot be narrowed beyond `unknown[]` at runtime.
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 		return value.map(entry => cloneWithFunctions(entry)) as unknown as T;
 	}
 	if (value instanceof Date) {
@@ -229,11 +233,10 @@ function applyTheming(option: EChartsOption, state: ConfigStackState): void {
 		return;
 	}
 
-	const palette = Array.isArray(option.color)
-		? option.color.filter((entry): entry is string => typeof entry === 'string')
-		: [];
-	const filtered = palette.filter(color => color !== state.theming.accentColor);
-	option.color = [state.theming.accentColor, ...filtered];
+	const accent = resolveCssColor(state.theming.accentColor, state.theming.accentColor);
+	const palette = Array.isArray(option.color) ? option.color.filter((entry): entry is string => typeof entry === 'string') : [];
+	const filtered = palette.filter(color => color !== accent);
+	option.color = [accent, ...filtered];
 }
 
 function ensureAxis(option: EChartsOption, key: 'xAxis' | 'yAxis'): Record<string, unknown> {

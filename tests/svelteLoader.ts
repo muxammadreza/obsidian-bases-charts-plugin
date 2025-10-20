@@ -5,26 +5,29 @@ import { resolve as resolvePath } from 'path';
 import { compile } from 'svelte/compiler';
 import { mock } from 'bun:test';
 
-mock.module('svelte', () =>
-	// @ts-expect-error - using internal client runtime path for tests
-	import('../node_modules/svelte/src/index-client.js') as Promise<typeof import('svelte')>,
+mock.module(
+	'svelte',
+	() =>
+		// @ts-expect-error - using internal client runtime path for tests
+		import('../node_modules/svelte/src/index-client.js') as Promise<typeof import('svelte')>,
 );
-mock.module('svelte/internal', () =>
-	// @ts-expect-error - using internal client runtime path for tests
-	import('../node_modules/svelte/src/internal/client/index.js'),
+mock.module(
+	'svelte/internal',
+	() =>
+		// @ts-expect-error - using internal client runtime path for tests
+		import('../node_modules/svelte/src/internal/client/index.js'),
 );
-mock.module('svelte/reactivity', () =>
-	// @ts-expect-error - using internal client runtime path for tests
-	import('../node_modules/svelte/src/reactivity/index-client.js'),
+mock.module(
+	'svelte/reactivity',
+	() =>
+		// @ts-expect-error - using internal client runtime path for tests
+		import('../node_modules/svelte/src/reactivity/index-client.js'),
 );
 
 plugin({
 	name: 'svelte loader',
 	setup(builder) {
-		const mockChartPanelPath = resolvePath(
-			fileURLToPath(new URL('.', import.meta.url)),
-			'mocks/MockChartPanel.svelte',
-		);
+		const mockChartPanelPath = resolvePath(fileURLToPath(new URL('.', import.meta.url)), 'mocks/MockChartPanel.svelte');
 
 		builder.onResolve({ filter: /^@ticatec\/uniface-echarts\/ChartPanel\.svelte$/ }, () => ({
 			path: mockChartPanelPath,

@@ -1,29 +1,28 @@
 import UnifaceChart from '@ticatec/uniface-echarts';
-import type ChartEventHandlers from '@ticatec/uniface-echarts/dist/ChartEventHandlers';
 import type ChartEventParams from '@ticatec/uniface-echarts/dist/ChartEventParams';
-import type { EChartsCoreOption, EChartsType, SetOptionOpts } from 'echarts';
+import type { EChartsCoreOption, EChartsType, EventParams, SetOptionOpts } from 'echarts';
 import type { EChartsOption } from 'packages/obsidian/src/echarts/options';
 import { ensureEChartsTheme, getEChartsThemeDefinition } from 'packages/obsidian/src/echarts/theme';
 
-type RuntimeState = {
+interface RuntimeState {
 	themeName: string;
 	themeDefinition: EChartsCoreOption;
-};
+}
 
-type RuntimeEvents = {
+interface RuntimeEvents {
 	onClick?: (params: ChartEventParams) => void;
 	onMouseOver?: (params: ChartEventParams) => void;
 	onMouseOut?: (params: ChartEventParams) => void;
-};
+}
 
 export type RuntimeErrorReporter = (message: string, error: unknown) => void;
 
-export type RuntimeChartInstance = {
+export interface RuntimeChartInstance {
 	chart: BasesChartBridge;
 	setOption: (option: EChartsOption, opts?: SetOptionOpts) => void;
 	setEvents: (handlers: RuntimeEvents) => void;
 	dispose: () => void;
-};
+}
 
 let runtimeState: RuntimeState | null = null;
 
@@ -37,10 +36,7 @@ export function ensureRuntime(): RuntimeState {
 	return runtimeState;
 }
 
-export function createChartInstance(params: {
-	initialOption: EChartsOption;
-	onError?: RuntimeErrorReporter;
-}): RuntimeChartInstance {
+export function createChartInstance(params: { initialOption: EChartsOption; onError?: RuntimeErrorReporter }): RuntimeChartInstance {
 	const { themeDefinition } = ensureRuntime();
 	const chart = new BasesChartBridge(params.initialOption, themeDefinition, params.onError);
 
@@ -57,7 +53,7 @@ class BasesChartBridge extends UnifaceChart {
 	private readonly theme: EChartsCoreOption;
 	private readonly onError?: RuntimeErrorReporter;
 	private pendingHandlers: RuntimeEvents = {};
-	private mouseOutListener: ((params: unknown) => void) | null = null;
+	private mouseOutListener: ((params: EventParams) => void) | null = null;
 
 	constructor(initialOption: EChartsOption, theme: EChartsCoreOption, onError?: RuntimeErrorReporter) {
 		super();
@@ -96,13 +92,13 @@ class BasesChartBridge extends UnifaceChart {
 	}
 
 	private applyOption(opts?: SetOptionOpts): void {
-		const chart = this.chart;
-		if (!chart) {
+		const runtimeChart = this.chart as EChartsType | undefined;
+		if (!runtimeChart) {
 			return;
 		}
 
 		try {
-			chart.setOption(mergeTheme(this.option, this.theme), {
+			runtimeChart.setOption(mergeTheme(this.option, this.theme), {
 				notMerge: true,
 				lazyUpdate: false,
 				...opts,
@@ -117,13 +113,13 @@ class BasesChartBridge extends UnifaceChart {
 	}
 
 	private installMouseOutHandler(explicitChart?: EChartsType): void {
-		const chart = explicitChart ?? this.chart;
-		if (!chart) {
+		const runtimeChart = explicitChart ?? (this.chart as EChartsType | undefined);
+		if (!runtimeChart) {
 			return;
 		}
 
 		if (this.mouseOutListener) {
-			chart.off('mouseout', this.mouseOutListener);
+			runtimeChart.off('mouseout', this.mouseOutListener);
 		}
 
 		if (!this.pendingHandlers.onMouseOut) {
@@ -131,10 +127,10 @@ class BasesChartBridge extends UnifaceChart {
 			return;
 		}
 
-		this.mouseOutListener = params => {
+		this.mouseOutListener = (params: EventParams): void => {
 			this.pendingHandlers.onMouseOut?.(params as ChartEventParams);
 		};
-		chart.on('mouseout', this.mouseOutListener);
+		runtimeChart.on('mouseout', this.mouseOutListener);
 	}
 }
 

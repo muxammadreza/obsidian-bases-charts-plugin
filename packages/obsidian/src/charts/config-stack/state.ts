@@ -1,4 +1,4 @@
-import type { ConfigStackPatch, ConfigStackState } from 'packages/obsidian/src/charts/config-stack/types';
+import type { ConfigStackState } from 'packages/obsidian/src/charts/config-stack/types';
 import { MultiChartMode } from 'packages/obsidian/src/ChartView';
 import type { ChartConfigState } from 'packages/obsidian/src/echarts/options';
 
@@ -26,8 +26,8 @@ export function createDefaultConfigStackState(config: ChartConfigState): ConfigS
 		},
 		tooltip: {
 			show: true,
-			trigger: 'item',
-			shared: false,
+			trigger: 'axis',
+			shared: true,
 		},
 		dataset: {
 			sampling: 'auto',
@@ -70,8 +70,8 @@ export function createEmptyConfigStackState(): ConfigStackState {
 		},
 		tooltip: {
 			show: true,
-			trigger: 'item',
-			shared: false,
+			trigger: 'axis',
+			shared: true,
 		},
 		dataset: {
 			sampling: 'auto',
@@ -100,15 +100,4 @@ export function cloneConfigStackState(state: ConfigStackState): ConfigStackState
 		interactions: { ...state.interactions },
 		theming: { ...state.theming },
 	};
-}
-
-export function applyPatchToState(state: ConfigStackState, patch: ConfigStackPatch): ConfigStackState {
-	const next = cloneConfigStackState(state);
-	const section = patch.section;
-	const current = next[section];
-	if (!current) {
-		return next;
-	}
-	Object.assign(current, patch.changes);
-	return next;
 }

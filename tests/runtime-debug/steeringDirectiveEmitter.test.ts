@@ -11,11 +11,7 @@ describe('RuntimeSteeringDirectiveEmitter', () => {
 
 	test('logs steering summary on startup', async () => {
 		await fs.mkdir('.codex/tmp', { recursive: true });
-		await fs.writeFile(
-			TEMP_STEERING,
-			`# Title\nLine 1\nLine 2\nLine 3\n`,
-			'utf8',
-		);
+		await fs.writeFile(TEMP_STEERING, `# Title\nLine 1\nLine 2\nLine 3\n`, 'utf8');
 
 		const log = mock<(message: string) => void>(() => {});
 		const emitter = new RuntimeSteeringDirectiveEmitter({

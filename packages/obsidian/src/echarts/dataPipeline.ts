@@ -24,8 +24,8 @@ export interface SeriesBlueprint {
 
 export interface PipelineDataset {
 	id: string;
-	dimensions: Array<{ name: string; type: 'ordinal' | 'number' | 'time' }>;
-	source: Array<Record<string, unknown>>;
+	dimensions: { name: string; type: 'ordinal' | 'number' | 'time' }[];
+	source: Record<string, unknown>[];
 }
 
 export interface CartesianPipelineResult {
@@ -69,11 +69,7 @@ export function buildCartesianPipeline(data: DataWrapper, chartIndex: number): C
 	};
 }
 
-export function attachDatasetsToSeries(
-	seriesBlueprints: SeriesBlueprint[],
-	axisType: AxisType,
-	chartIndex: number,
-): PipelineDataset[] {
+export function attachDatasetsToSeries(seriesBlueprints: SeriesBlueprint[], axisType: AxisType, chartIndex: number): PipelineDataset[] {
 	const datasets: PipelineDataset[] = [];
 
 	for (let index = 0; index < seriesBlueprints.length; index++) {
@@ -183,7 +179,7 @@ function createDatasetRow(datum: EChartsDatum): Record<string, unknown> {
 	};
 }
 
-function createDimensions(axisType: AxisType): Array<{ name: string; type: 'ordinal' | 'number' | 'time' }> {
+function createDimensions(axisType: AxisType): { name: string; type: 'ordinal' | 'number' | 'time' }[] {
 	return [
 		{ name: 'x', type: axisType === 'time' ? 'time' : axisType === 'category' ? 'ordinal' : 'number' },
 		{ name: 'y', type: 'number' },

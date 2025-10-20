@@ -50,9 +50,7 @@ export class RuntimeSteeringDirectiveEmitter implements SteeringEmitterInterface
 			this.cachedSummary = this.buildSummary(fileContents);
 			return this.cachedSummary;
 		} catch (error) {
-			const message = `[steering] Failed to read ${basename(this.steeringPath)}: ${
-				error instanceof Error ? error.message : String(error)
-			}`;
+			const message = `[steering] Failed to read ${basename(this.steeringPath)}: ${error instanceof Error ? error.message : String(error)}`;
 			this.output.warn(message);
 			this.cachedSummary = message;
 			return message;

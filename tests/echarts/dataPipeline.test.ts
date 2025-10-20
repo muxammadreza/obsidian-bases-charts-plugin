@@ -20,7 +20,7 @@ function createDataWrapper(points: ProcessedData[]): DataWrapper {
 		getYDomain: () => ({ min: null, max: null, synced: false }),
 		hasMultipleGroups: () => true,
 		hasMultipleCharts: () => false,
-		getChartGroupIdentifier: () => (() => colors[0]),
+		getChartGroupIdentifier: () => () => colors[0],
 		getStacked: () => points,
 		getGlobalYMin: () => 0,
 		getGlobalYMax: () => 100,

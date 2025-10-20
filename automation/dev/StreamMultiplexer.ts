@@ -6,21 +6,21 @@ import type { ObsidianConsoleEvent } from './processes/ObsidianConsoleProcess';
 
 export type StreamEvent =
 	| {
-		readonly kind: 'log';
-		readonly source: 'build' | 'runtime';
-		readonly level: 'info' | 'warn' | 'error';
-		readonly message: string;
-		readonly timestamp: number;
-		readonly metadata?: Record<string, unknown>;
-	}
+			readonly kind: 'log';
+			readonly source: 'build' | 'runtime';
+			readonly level: 'info' | 'warn' | 'error';
+			readonly message: string;
+			readonly timestamp: number;
+			readonly metadata?: Record<string, unknown>;
+	  }
 	| {
-		readonly kind: 'status';
-		readonly source: 'build' | 'runtime';
-		readonly status: string;
-		readonly timestamp: number;
-		readonly severity: 'info' | 'warn' | 'error';
-		readonly metadata?: Record<string, unknown>;
-	};
+			readonly kind: 'status';
+			readonly source: 'build' | 'runtime';
+			readonly status: string;
+			readonly timestamp: number;
+			readonly severity: 'info' | 'warn' | 'error';
+			readonly metadata?: Record<string, unknown>;
+	  };
 
 export interface StreamMultiplexerOptions {
 	bufferSize?: number;
@@ -257,12 +257,7 @@ export class StreamMultiplexer {
 					source: 'runtime',
 					status: event.status,
 					timestamp: event.timestamp,
-					severity:
-						event.status === 'error'
-							? 'error'
-							: event.status === 'detached'
-							? 'warn'
-							: 'info',
+					severity: event.status === 'error' ? 'error' : event.status === 'detached' ? 'warn' : 'info',
 					metadata: this.stripUndefined({ detail: event.detail }),
 				};
 			default:
@@ -282,9 +277,7 @@ export class StreamMultiplexer {
 			return;
 		}
 
-		const droppableIndex = this.buffer.findIndex(
-			event => event.kind === 'log' && event.level === 'info',
-		);
+		const droppableIndex = this.buffer.findIndex(event => event.kind === 'log' && event.level === 'info');
 		if (droppableIndex >= 0) {
 			this.buffer.splice(droppableIndex, 1);
 			return;

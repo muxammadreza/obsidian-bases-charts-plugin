@@ -1,13 +1,8 @@
 import type { DataWrapper, LegendMetadata } from 'packages/obsidian/src/ChartData';
 import type { MultiChartMode } from 'packages/obsidian/src/ChartView';
+import type { AxisType, EChartsDatum, SeriesBlueprint } from 'packages/obsidian/src/echarts/dataPipeline';
+import { attachDatasetsToSeries, buildCartesianPipeline } from 'packages/obsidian/src/echarts/dataPipeline';
 import { toCompactString } from 'packages/obsidian/src/utils/utils';
-import {
-	attachDatasetsToSeries,
-	buildCartesianPipeline,
-	type AxisType,
-	type EChartsDatum,
-	type SeriesBlueprint,
-} from 'packages/obsidian/src/echarts/dataPipeline';
 
 interface AxisLabelConfig {
 	formatter?: (value: number | string) => string;
@@ -370,9 +365,7 @@ function getFirstAxis(axisConfig: EChartsOption['yAxis']): AxisConfig | null {
 	return axisConfig;
 }
 
-export function coerceDatumFromEventPayload(
-	payload: { data?: unknown; value?: [number | string, number] } | undefined,
-): EChartsDatum | undefined {
+export function coerceDatumFromEventPayload(payload: { data?: unknown; value?: [number | string, number] } | undefined): EChartsDatum | undefined {
 	if (!payload) {
 		return undefined;
 	}
@@ -381,7 +374,7 @@ export function coerceDatumFromEventPayload(
 		return fromData;
 	}
 	if (Array.isArray(payload.value)) {
-		const valueTuple = payload.value as [number | string, number];
+		const valueTuple = payload.value;
 		return {
 			value: valueTuple,
 			rawX: valueTuple[0],
@@ -418,12 +411,17 @@ function coerceDatum(source: unknown): EChartsDatum | undefined {
 		if (Array.isArray(record.value)) {
 			const tuple = record.value as [number | string, number];
 			const rawXValue = isValidRawX(record.rawX) ? record.rawX : tuple[0];
+			const xKeySource = record.xKey;
+			const xKey = typeof xKeySource === 'string' || typeof xKeySource === 'number' ? String(xKeySource) : String(tuple[0]);
+			const fileSource = record.file;
+			const file = typeof fileSource === 'string' ? fileSource : '';
+			const label = typeof record.label === 'string' ? record.label : typeof record.label === 'number' ? String(record.label) : undefined;
 			return {
 				value: tuple,
 				rawX: rawXValue,
-				xKey: record.xKey ? String(record.xKey) : String(tuple[0]),
-				file: record.file ? String(record.file) : '',
-				label: record.label !== undefined ? (record.label as string | undefined) : undefined,
+				xKey,
+				file,
+				label,
 				groupIndex: record.groupIndex !== undefined ? Number(record.groupIndex) : 0,
 				chartIndex: record.chartIndex !== undefined ? Number(record.chartIndex) : 0,
 			};

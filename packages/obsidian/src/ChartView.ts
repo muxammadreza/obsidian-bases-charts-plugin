@@ -4,15 +4,11 @@ import { BasesView, Events, Notice } from 'obsidian';
 import type { DataWrapper, ProcessedData } from 'packages/obsidian/src/ChartData';
 import { emptyDataWrapper, GroupSeparatedData, PropertySeparatedData } from 'packages/obsidian/src/ChartData';
 import BarPlot from 'packages/obsidian/src/charts/BarPlot.svelte';
+import type { ConfigStackState } from 'packages/obsidian/src/charts/config-stack/types';
 import LinePlot from 'packages/obsidian/src/charts/LinePlot.svelte';
 import ScatterPlot from 'packages/obsidian/src/charts/ScatterPlot.svelte';
 import { parseValueAsNumber, parseValueAsX } from 'packages/obsidian/src/utils/utils';
 import { mount, unmount } from 'svelte';
-import type {
-	ConfigStackApplyDetail,
-	ConfigStackRevertDetail,
-	ConfigStackState,
-} from 'packages/obsidian/src/charts/config-stack/types';
 
 export const SCATTER_CHART_VIEW_TYPE = 'chart-scatter';
 export const LINE_CHART_VIEW_TYPE = 'chart-line';
@@ -98,18 +94,7 @@ export class ChartView extends BasesView {
 				},
 			});
 		}
-
-		const applyRef = this.events.on('config-stack:apply', this.handleConfigStackApply);
-		const revertRef = this.events.on('config-stack:revert', this.handleConfigStackRevert);
-		if (typeof (this as { registerEvent?: (ref: unknown) => void }).registerEvent === 'function') {
-			if (applyRef) {
-				this.registerEvent(applyRef);
-			}
-			if (revertRef) {
-				this.registerEvent(revertRef);
-			}
-		}
- 	}
+	}
 
 	onunload(): void {
 		if (this.svelteComponent) {
@@ -129,6 +114,10 @@ export class ChartView extends BasesView {
 		const store = this.ensureConfigStackStore();
 		const state = store[chartId];
 		return state ? cloneStackState(state) : null;
+	}
+
+	saveConfigStackState(chartId: string, state: ConfigStackState): void {
+		this.storeConfigStackState(chartId, state);
 	}
 
 	private ensureConfigStackStore(): Record<string, ConfigStackState> {
@@ -177,20 +166,6 @@ export class ChartView extends BasesView {
 		store[chartId] = cloneStackState(state);
 		this.persistConfigStackStore();
 	}
-
-	private readonly handleConfigStackApply = (detail?: unknown): void => {
-		if (!isConfigStackApplyDetail(detail)) {
-			return;
-		}
-		this.storeConfigStackState(detail.chartId, detail.state);
-	};
-
-	private readonly handleConfigStackRevert = (detail?: unknown): void => {
-		if (!isConfigStackRevertDetail(detail)) {
-			return;
-		}
-		this.storeConfigStackState(detail.chartId, detail.state);
-	};
 
 	processData(): DataWrapper {
 		const config = this.config;
@@ -369,15 +344,15 @@ export class ChartView extends BasesView {
 				placeholder: 'Leave empty to disable',
 				default: '',
 			},
-		{
-			displayName: 'Max Y override',
-			type: 'text',
-			key: CHART_SETTINGS.MAX_Y_OVERRIDE,
-			placeholder: 'Leave empty to disable',
-			default: '',
-		},
-	];
-}
+			{
+				displayName: 'Max Y override',
+				type: 'text',
+				key: CHART_SETTINGS.MAX_Y_OVERRIDE,
+				placeholder: 'Leave empty to disable',
+				default: '',
+			},
+		];
+	}
 
 	static scatterViewOptions(): ViewOption[] {
 		return [
@@ -444,20 +419,4 @@ function isConfigStackState(value: unknown): value is ConfigStackState {
 
 function isSection(value: unknown): value is Record<string, unknown> {
 	return Boolean(value && typeof value === 'object');
-}
-
-function isConfigStackApplyDetail(value: unknown): value is ConfigStackApplyDetail {
-	if (!value || typeof value !== 'object') {
-		return false;
-	}
-	const record = value as Record<string, unknown>;
-	return typeof record.chartId === 'string' && isConfigStackState(record.state);
-}
-
-function isConfigStackRevertDetail(value: unknown): value is ConfigStackRevertDetail {
-	if (!value || typeof value !== 'object') {
-		return false;
-	}
-	const record = value as Record<string, unknown>;
-	return typeof record.chartId === 'string' && isConfigStackState(record.state);
 }

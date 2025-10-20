@@ -1,6 +1,6 @@
 import type { BasesPropertyId } from 'obsidian';
 import type { ChartView, YDomainOverrides } from 'packages/obsidian/src/ChartView';
-import { OBSIDIAN_DEFAULT_SINGLE_COLOR, OBSIDIAN_COLOR_PALETTE } from 'packages/obsidian/src/utils/utils';
+import { OBSIDIAN_DEFAULT_SINGLE_COLOR, getResolvedObsidianPaletteColor } from 'packages/obsidian/src/utils/utils';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type ProcessedData = {
@@ -51,7 +51,7 @@ export abstract class AbstractDataWrapper<ChartId, GroupId> {
 	}
 
 	getColorFromGroupIndex(groupIndex: number): string {
-		return OBSIDIAN_COLOR_PALETTE[groupIndex % OBSIDIAN_COLOR_PALETTE.length];
+		return getResolvedObsidianPaletteColor(groupIndex);
 	}
 
 	hasMultipleGroups(): boolean {

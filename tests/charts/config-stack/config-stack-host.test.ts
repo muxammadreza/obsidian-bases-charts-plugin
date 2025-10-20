@@ -3,14 +3,14 @@ import '../../svelteLoader';
 import '../../obsidianMock';
 
 import { describe, expect, test, mock } from 'bun:test';
-import type { ConfigStackApplyDetail } from 'packages/obsidian/src/charts/config-stack/types';
+import type { ConfigStackApplyDetail, ConfigStackState } from 'packages/obsidian/src/charts/config-stack/types';
 import { createEmptyConfigStackState } from 'packages/obsidian/src/charts/config-stack/state';
 mock.module('@ticatec/uniface-echarts/ChartPanel.svelte', () => import('../../mocks/MockChartPanel.svelte'));
 
 const { default: ConfigStackHost } = await import('packages/obsidian/src/charts/config-stack/ConfigStackHost.svelte');
 
 describe('ConfigStackHost', () => {
-	test('emits applyConfig patch when a control changes', async () => {
+	test('emits updated state when a control changes', async () => {
 		const target = document.createElement('div');
 		document.body.appendChild(target);
 
@@ -20,17 +20,20 @@ describe('ConfigStackHost', () => {
 			props: {
 				autoHideMs: 100,
 				chartId: 'chart-test',
-				initialState,
+				state: createEmptyConfigStackState(),
+				baseline: initialState,
 			},
 		});
 
 		let lastDetail: ConfigStackApplyDetail | null = null;
-		component.$on(
-			'applyConfig',
-			(event: CustomEvent<ConfigStackApplyDetail>) => {
-				lastDetail = event.detail;
-			},
-		);
+		component.$on('applyConfig', (event: CustomEvent<ConfigStackApplyDetail>) => {
+			lastDetail = event.detail;
+		});
+
+		let changeEventState: ConfigStackState | null = null;
+		component.$on('change', (event: CustomEvent<ConfigStackState>) => {
+			changeEventState = event.detail;
+		});
 
 		await Promise.resolve();
 
@@ -45,8 +48,9 @@ describe('ConfigStackHost', () => {
 
 		expect(lastDetail).not.toBeNull();
 		const detail = lastDetail!;
-		expect(detail.patch.section).toBe('legend');
 		expect(detail.state.legend.visible).toBe(false);
+		expect(changeEventState).not.toBeNull();
+		expect(changeEventState?.legend.visible).toBe(false);
 
 		component.$destroy();
 		target.remove();
@@ -61,7 +65,8 @@ describe('ConfigStackHost', () => {
 			props: {
 				autoHideMs: 40,
 				chartId: 'chart-hide',
-				initialState: createEmptyConfigStackState(),
+				state: createEmptyConfigStackState(),
+				baseline: createEmptyConfigStackState(),
 			},
 		});
 
@@ -73,9 +78,8 @@ describe('ConfigStackHost', () => {
 		const surface = target.querySelector('[data-testid="config-stack-surface"]');
 		expect(surface).not.toBeNull();
 
-		const pointerLeave = typeof PointerEvent === 'function'
-			? new PointerEvent('pointerleave', { bubbles: true })
-			: new Event('pointerleave', { bubbles: true });
+		const pointerLeave =
+			typeof PointerEvent === 'function' ? new PointerEvent('pointerleave', { bubbles: true }) : new Event('pointerleave', { bubbles: true });
 		surface?.dispatchEvent(pointerLeave);
 		await new Promise(resolve => setTimeout(resolve, 60));
 

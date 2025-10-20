@@ -1,8 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import {
-	StreamMultiplexer,
-	type StreamEvent,
-} from '../../automation/dev/StreamMultiplexer';
+import { StreamMultiplexer, type StreamEvent } from '../../automation/dev/StreamMultiplexer';
 import type { DevWatcherEvent } from '../../automation/dev/processes/DevWatcherProcess';
 import type { ObsidianConsoleEvent } from '../../automation/dev/processes/ObsidianConsoleProcess';
 
@@ -81,25 +78,25 @@ describe('StreamMultiplexer', () => {
 		};
 		sockets.add(fakeSocket);
 
-	multiplexer.ingestBuildEvent({
-		type: 'build-log',
-		level: 'info',
-		message: 'hello',
-		stream: 'stdout',
-		timestamp: Date.now(),
-	});
+		multiplexer.ingestBuildEvent({
+			type: 'build-log',
+			level: 'info',
+			message: 'hello',
+			stream: 'stdout',
+			timestamp: Date.now(),
+		});
 
-	await Bun.sleep(150);
-	expect(fakeSocket.sent).toHaveLength(1);
-	const parsed = JSON.parse(fakeSocket.sent[0]);
-	expect(parsed.type).toBe('event-batch');
-	expect(Array.isArray(parsed.events)).toBe(true);
-	expect(parsed.events[0]).toMatchObject({ kind: 'log', source: 'build', message: 'hello' });
+		await Bun.sleep(150);
+		expect(fakeSocket.sent).toHaveLength(1);
+		const parsed = JSON.parse(fakeSocket.sent[0]);
+		expect(parsed.type).toBe('event-batch');
+		expect(Array.isArray(parsed.events)).toBe(true);
+		expect(parsed.events[0]).toMatchObject({ kind: 'log', source: 'build', message: 'hello' });
 
-	sockets.delete(fakeSocket);
-	sockets.add(fakeSocket);
-	await multiplexer.shutdown();
-	expect(fakeSocket.closed).toBe(true);
+		sockets.delete(fakeSocket);
+		sockets.add(fakeSocket);
+		await multiplexer.shutdown();
+		expect(fakeSocket.closed).toBe(true);
 	});
 
 	test('broadcastTracker delivers tracker snapshots', async () => {

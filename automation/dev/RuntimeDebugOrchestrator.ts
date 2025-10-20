@@ -35,14 +35,12 @@ export class RuntimeDebugOrchestrator {
 
 		this.participants = [...options.participants];
 		this.steeringEmitter = options.steeringEmitter;
-		this.logger =
-			options.logger ?? {
-				info: console.log,
-				warn: console.warn,
-				error: console.error,
-			};
-		this.readinessMessage =
-			options.readinessMessage ?? 'Runtime debugging orchestrator is ready.';
+		this.logger = options.logger ?? {
+			info: console.log,
+			warn: console.warn,
+			error: console.error,
+		};
+		this.readinessMessage = options.readinessMessage ?? 'Runtime debugging orchestrator is ready.';
 	}
 
 	public isRunning(): boolean {
@@ -62,11 +60,7 @@ export class RuntimeDebugOrchestrator {
 			await this.steeringEmitter.emitStartup();
 			this.logger.info(this.readinessMessage);
 		} catch (error) {
-			this.logger.error(
-				`Failed to start runtime debugging orchestrator: ${
-					error instanceof Error ? error.message : String(error)
-				}`,
-			);
+			this.logger.error(`Failed to start runtime debugging orchestrator: ${error instanceof Error ? error.message : String(error)}`);
 			await this.shutdownParticipants('startup-error');
 			this.running = false;
 			throw error;
@@ -90,19 +84,13 @@ export class RuntimeDebugOrchestrator {
 
 	private async shutdownParticipants(reason: string): Promise<void> {
 		await Promise.allSettled(
-			[...this.participants]
-				.reverse()
-				.map(async participant => {
-					try {
-						await participant.stop(reason);
-					} catch (error) {
-						this.logger.warn(
-							`Failed to stop participant "${participant.name}": ${
-								error instanceof Error ? error.message : String(error)
-							}`,
-						);
-					}
-				}),
+			[...this.participants].reverse().map(async participant => {
+				try {
+					await participant.stop(reason);
+				} catch (error) {
+					this.logger.warn(`Failed to stop participant "${participant.name}": ${error instanceof Error ? error.message : String(error)}`);
+				}
+			}),
 		);
 	}
 }

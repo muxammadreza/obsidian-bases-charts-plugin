@@ -8,9 +8,7 @@ import {
 	type RuntimeExceptionThrownEvent,
 } from '../../automation/dev/processes/ObsidianConsoleProcess';
 
-function isRuntimeStatusEvent(
-	event: ObsidianConsoleEvent,
-): event is Extract<ObsidianConsoleEvent, { type: 'runtime-status' }> {
+function isRuntimeStatusEvent(event: ObsidianConsoleEvent): event is Extract<ObsidianConsoleEvent, { type: 'runtime-status' }> {
 	return event.type === 'runtime-status';
 }
 
@@ -143,9 +141,7 @@ describe('ObsidianConsoleProcess', () => {
 		expect(connect).toHaveBeenCalledTimes(1);
 		expect(spawn).not.toHaveBeenCalled();
 		expect(focusCommand).toHaveBeenCalledTimes(1);
-		const attachedEvent = events.find(
-			event => event.type === 'runtime-status' && event.status === 'attached',
-		);
+		const attachedEvent = events.find(event => event.type === 'runtime-status' && event.status === 'attached');
 		expect(attachedEvent).toBeDefined();
 	});
 
@@ -181,18 +177,10 @@ describe('ObsidianConsoleProcess', () => {
 
 		await Bun.sleep(1);
 
-		expect(
-			events.filter(event => event.type === 'runtime-log' && event.level === 'info').length,
-		).toBeGreaterThanOrEqual(1);
-		expect(
-			events.filter(event => event.type === 'runtime-log' && event.level === 'warn').length,
-		).toBeGreaterThanOrEqual(1);
-		expect(
-			events.filter(event => event.type === 'runtime-error' && event.origin === 'console').length,
-		).toBe(1);
-		expect(
-			events.filter(event => event.type === 'runtime-error' && event.origin === 'log').length,
-		).toBe(1);
+		expect(events.filter(event => event.type === 'runtime-log' && event.level === 'info').length).toBeGreaterThanOrEqual(1);
+		expect(events.filter(event => event.type === 'runtime-log' && event.level === 'warn').length).toBeGreaterThanOrEqual(1);
+		expect(events.filter(event => event.type === 'runtime-error' && event.origin === 'console').length).toBe(1);
+		expect(events.filter(event => event.type === 'runtime-error' && event.origin === 'log').length).toBe(1);
 	});
 
 	test('formats non-string console arguments using description/value', async () => {
@@ -203,9 +191,7 @@ describe('ObsidianConsoleProcess', () => {
 		client.emitConsole('error', [{ value: { message: 'fail' } }]);
 		await Bun.sleep(1);
 
-		const errorMessages = events
-			.filter(event => event.type === 'runtime-error')
-			.map(event => event.message);
+		const errorMessages = events.filter(event => event.type === 'runtime-error').map(event => event.message);
 		expect(errorMessages.some(message => message.includes('TypeError: boom'))).toBe(true);
 		expect(errorMessages.some(message => message.includes('fail'))).toBe(true);
 	});
@@ -217,9 +203,7 @@ describe('ObsidianConsoleProcess', () => {
 		client.emitException('ReferenceError: x is not defined');
 		await Bun.sleep(1);
 
-		const exceptionEvent = events.find(
-			event => event.type === 'runtime-error' && event.message.includes('ReferenceError: x is not defined'),
-		);
+		const exceptionEvent = events.find(event => event.type === 'runtime-error' && event.message.includes('ReferenceError: x is not defined'));
 		expect(exceptionEvent).toBeDefined();
 	});
 
@@ -238,9 +222,7 @@ describe('ObsidianConsoleProcess', () => {
 
 		expect(connect).toHaveBeenCalledTimes(2);
 		expect(focusCommand.mock.calls.length).toBeGreaterThanOrEqual(2);
-		const attachedEvents = events
-			.filter(isRuntimeStatusEvent)
-			.filter(event => event.status === 'attached');
+		const attachedEvents = events.filter(isRuntimeStatusEvent).filter(event => event.status === 'attached');
 		expect(attachedEvents.length).toBeGreaterThanOrEqual(2);
 		const reconnectDetail = attachedEvents.at(-1)?.detail;
 		expect(reconnectDetail).toBe('reconnected');
@@ -264,9 +246,7 @@ describe('ObsidianConsoleProcess', () => {
 
 		expect(client.close).toHaveBeenCalledTimes(1);
 		expect(spawnedProcess.kill).toHaveBeenCalled();
-		const detached = events.filter(
-			event => event.type === 'runtime-status' && event.status === 'detached',
-		);
+		const detached = events.filter(event => event.type === 'runtime-status' && event.status === 'detached');
 		expect(detached.length).toBeGreaterThanOrEqual(1);
 	});
 });

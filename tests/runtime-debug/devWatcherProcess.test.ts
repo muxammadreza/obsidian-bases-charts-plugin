@@ -97,9 +97,7 @@ describe('DevWatcherProcess', () => {
 		process.stderrStream.push('ERROR in src/main.tsx\n');
 		await Bun.sleep(5);
 
-		const warnLog = events.find(
-			event => event.type === 'build-log' && event.stream === 'stderr' && event.level === 'warn',
-		);
+		const warnLog = events.find(event => event.type === 'build-log' && event.stream === 'stderr' && event.level === 'warn');
 		expect(warnLog).toBeDefined();
 		const errorEvent = events.find(event => event.type === 'build-error');
 		expect(errorEvent).toBeDefined();
@@ -112,9 +110,7 @@ describe('DevWatcherProcess', () => {
 		await watcher.stop('test-stop');
 
 		expect(process.kill).toHaveBeenCalled();
-		const stopped = events.find(
-			event => event.type === 'build-status' && event.status === 'stopped' && event.reason === 'test-stop',
-		);
+		const stopped = events.find(event => event.type === 'build-status' && event.status === 'stopped' && event.reason === 'test-stop');
 		expect(stopped).toBeDefined();
 	});
 
@@ -125,9 +121,7 @@ describe('DevWatcherProcess', () => {
 		process.exit(0);
 		await Bun.sleep(5);
 
-		const exitEvent = events.find(
-			event => event.type === 'build-status' && event.status === 'exited' && event.exitCode === 0,
-		);
+		const exitEvent = events.find(event => event.type === 'build-status' && event.status === 'exited' && event.exitCode === 0);
 		expect(exitEvent).toBeDefined();
 	});
 
@@ -140,21 +134,15 @@ describe('DevWatcherProcess', () => {
 		process.stdoutStream.push('✔ compiled successfully in 120ms\n');
 		await Bun.sleep(5);
 
-		const cleanEvent = events.find(
-			event => event.type === 'build-status' && event.status === 'clean',
-		);
+		const cleanEvent = events.find(event => event.type === 'build-status' && event.status === 'clean');
 		expect(cleanEvent).toBeDefined();
 
-		const cleanEventCount = events.filter(
-			event => event.type === 'build-status' && event.status === 'clean',
-		).length;
+		const cleanEventCount = events.filter(event => event.type === 'build-status' && event.status === 'clean').length;
 		expect(cleanEventCount).toBe(1);
 
 		process.stdoutStream.push('ready in 85ms\n');
 		await Bun.sleep(5);
-		const secondCleanEventCount = events.filter(
-			event => event.type === 'build-status' && event.status === 'clean',
-		).length;
+		const secondCleanEventCount = events.filter(event => event.type === 'build-status' && event.status === 'clean').length;
 		expect(secondCleanEventCount).toBe(1);
 	});
 

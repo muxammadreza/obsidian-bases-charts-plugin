@@ -1,13 +1,6 @@
 import type { ChartConfigState } from 'packages/obsidian/src/echarts/options';
 
-export type ConfigStackSection =
-	| 'axes'
-	| 'series'
-	| 'legend'
-	| 'tooltip'
-	| 'dataset'
-	| 'interactions'
-	| 'theming';
+export type ConfigStackSection = 'axes' | 'series' | 'legend' | 'tooltip' | 'dataset' | 'interactions' | 'theming';
 
 export interface AxesConfigState {
 	xType: 'auto' | 'value' | 'category' | 'time';
@@ -65,11 +58,6 @@ export interface ConfigStackState {
 	theming: ThemingConfigState;
 }
 
-export interface ConfigStackPatch<TSection extends ConfigStackSection = ConfigStackSection> {
-	section: TSection;
-	changes: Partial<ConfigStackState[TSection]>;
-}
-
 export interface ConfigStackToggleDetail {
 	chartId: string;
 	visible: boolean;
@@ -79,7 +67,6 @@ export interface ConfigStackToggleDetail {
 export interface ConfigStackApplyDetail {
 	chartId: string;
 	state: ConfigStackState;
-	patch: ConfigStackPatch;
 }
 
 export interface ConfigStackRevertDetail {

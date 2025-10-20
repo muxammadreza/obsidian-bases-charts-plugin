@@ -1,11 +1,9 @@
 <script lang="ts">
 	import { createEventDispatcher, onDestroy } from 'svelte';
 	import ConfigPanel from 'packages/obsidian/src/charts/config-stack/ConfigPanel.svelte';
-	import { applyPatchToState, cloneConfigStackState } from 'packages/obsidian/src/charts/config-stack/state';
-	import { createStackController } from 'packages/obsidian/src/charts/config-stack/stackController';
+	import { cloneConfigStackState, createEmptyConfigStackState } from 'packages/obsidian/src/charts/config-stack/state';
 	import type {
 		ConfigStackApplyDetail,
-		ConfigStackPatch,
 		ConfigStackRevertDetail,
 		ConfigStackState,
 		ConfigStackToggleDetail,
@@ -13,103 +11,141 @@
 
 	interface Props {
 		chartId: string;
-		initialState: ConfigStackState;
 		autoHideMs?: number;
+		state?: ConfigStackState;
+		baseline?: ConfigStackState;
 	}
 
-	let { chartId, initialState, autoHideMs = 3000 }: Props = $props();
+	const props = $props<Props>();
+
+	let chartId = $state(props.chartId);
+	let autoHideMs = $state(props.autoHideMs ?? 3000);
+	let baseline = $state(cloneConfigStackState(props.baseline ?? createEmptyConfigStackState()));
+	let state = $state(cloneConfigStackState(props.state ?? baseline));
+	let propsStateSignature = JSON.stringify(props.state ?? baseline);
+	let visible = $state(false);
+	let pinned = $state(false);
+	let autoHideTimer: ReturnType<typeof setTimeout> | null = null;
+	let publishedSignature = '';
 
 	const dispatch = createEventDispatcher<{
 		toggle: ConfigStackToggleDetail;
 		applyConfig: ConfigStackApplyDetail;
 		revert: ConfigStackRevertDetail;
+		change: ConfigStackState;
 	}>();
 
-	let baseline = $state(cloneConfigStackState(initialState));
-	let stackState = $state(cloneConfigStackState(initialState));
-	let visible = $state(false);
-	let pinned = $state(false);
-	let controller = createStackController({ autoHideMs, initialVisible: false, initialPinned: false });
-
-	controller.on('visibility-change', snapshot => {
-		visible = snapshot.visible;
-		pinned = snapshot.pinned;
+	$effect(() => {
+		chartId = props.chartId;
 	});
 
-	function refreshBaseline(next: ConfigStackState): void {
-		baseline = cloneConfigStackState(next);
-		if (!visible) {
-			stackState = cloneConfigStackState(next);
+	$effect(() => {
+		autoHideMs = props.autoHideMs ?? 3000;
+	});
+
+	$effect(() => {
+		const nextBaseline = cloneConfigStackState(props.baseline ?? createEmptyConfigStackState());
+		const baselineSignature = JSON.stringify(nextBaseline);
+		const currentSignature = JSON.stringify(baseline);
+		if (baselineSignature !== currentSignature) {
+			baseline = nextBaseline;
+			if (!visible) {
+				state = cloneConfigStackState(nextBaseline);
+			}
+		}
+	});
+
+	$effect(() => {
+		const providedState = props.state ?? baseline;
+		const providedSignature = JSON.stringify(providedState);
+		if (providedSignature !== propsStateSignature) {
+			propsStateSignature = providedSignature;
+			state = cloneConfigStackState(providedState);
+		}
+	});
+
+	function clearAutoHide(): void {
+		if (autoHideTimer) {
+			clearTimeout(autoHideTimer);
+			autoHideTimer = null;
 		}
 	}
 
-	$effect(() => {
-		refreshBaseline(initialState);
-	});
+	function scheduleAutoHide(): void {
+		if (!visible || pinned) {
+			return;
+		}
+		clearAutoHide();
+		autoHideTimer = setTimeout(() => {
+			visible = false;
+		}, autoHideMs);
+	}
 
-	function emitToggle(): void {
+	$effect(() => {
 		dispatch('toggle', {
 			chartId,
 			visible,
 			pinned,
 		});
-	}
+		if (!visible || pinned) {
+			clearAutoHide();
+		} else {
+			scheduleAutoHide();
+		}
+	});
+
+	$effect(() => {
+		const signature = JSON.stringify(state);
+		if (signature === publishedSignature) {
+			return;
+		}
+		publishedSignature = signature;
+		dispatch('applyConfig', {
+			chartId,
+			state: cloneConfigStackState(state),
+		});
+		if (visible && !pinned) {
+			scheduleAutoHide();
+		}
+	});
 
 	function handleToggle(): void {
-		const isVisible = controller.snapshot.visible;
-		if (isVisible) {
-			controller.hide('user');
-		} else {
-			controller.show('user');
-			if (!controller.snapshot.pinned) {
-				controller.scheduleAutoHide();
-			}
-		}
-		emitToggle();
+		visible = !visible;
 	}
 
 	function handlePinToggle(): void {
-		controller.setPinned(!pinned);
-		emitToggle();
+		pinned = !pinned;
 	}
 
-	function handleApply(event: CustomEvent<ConfigStackPatch>): void {
-		stackState = applyPatchToState(stackState, event.detail);
-		dispatch('applyConfig', {
-			chartId,
-			state: stackState,
-			patch: event.detail,
-		});
-		controller.cancelAutoHide();
-		if (!pinned) {
-			controller.scheduleAutoHide();
-		}
+	function handlePanelChange(event: CustomEvent<ConfigStackState>): void {
+		state = cloneConfigStackState(event.detail);
+		dispatch('change', cloneConfigStackState(state));
 	}
 
 	function handleReset(): void {
-		stackState = cloneConfigStackState(baseline);
+		state = cloneConfigStackState(baseline);
+		dispatch('change', cloneConfigStackState(state));
 		dispatch('revert', {
 			chartId,
-			state: stackState,
+			state: cloneConfigStackState(state),
 		});
-		controller.cancelAutoHide();
-		if (!pinned) {
-			controller.scheduleAutoHide();
+		if (visible && !pinned) {
+			scheduleAutoHide();
 		}
 	}
 
 	function handlePointerEnter(): void {
-		controller.cancelAutoHide();
+		clearAutoHide();
 	}
 
 	function handlePointerLeave(): void {
-		if (!pinned) {
-			controller.scheduleAutoHide();
+		if (visible && !pinned) {
+			scheduleAutoHide();
 		}
 	}
 
 	onDestroy(() => {
-		controller.destroy();
+		clearAutoHide();
 	});
 </script>
 
@@ -145,12 +181,10 @@
 					>
 						📌
 					</button>
-					<button type="button" class="reset-button" data-testid="config-stack-reset" onclick={handleReset}>
-						Reset
-					</button>
+					<button type="button" class="reset-button" data-testid="config-stack-reset" onclick={handleReset}> Reset </button>
 				</div>
 			</header>
-			<ConfigPanel chartId={chartId} state={stackState} on:change={handleApply} />
+			<ConfigPanel chartId={chartId} state={state} on:change={handlePanelChange} />
 		</div>
 	{/if}
 </div>
@@ -165,6 +199,7 @@
 		align-items: flex-end;
 		gap: var(--size-2-2);
 		pointer-events: none;
+		z-index: 5;
 	}
 
 	.config-toggle {

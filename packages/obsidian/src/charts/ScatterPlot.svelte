@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import type { DataWrapper } from '../ChartData';
 	import { buildChartConfig } from '../echarts/config';
 	import { createDefaultConfigStackState } from './config-stack/state';
@@ -11,30 +10,31 @@
 		view: ChartView;
 	}
 
-let { view }: Props = $props();
+	let { view }: Props = $props();
 
-let chartConfig = $state(buildChartConfig(view, { chartType: 'scatter' }));
+	let chartConfig = $state(buildChartConfig(view, { chartType: 'scatter' }));
 
-function refreshConfig(): void {
-	chartConfig = buildChartConfig(view, { chartType: 'scatter' });
-}
+	$effect(() => {
+		const refreshConfig = () => {
+			chartConfig = buildChartConfig(view, { chartType: 'scatter' });
+		};
 
-	onMount(() => {
 		refreshConfig();
 		view.events.on('data-updated', refreshConfig);
+
 		return () => {
 			view.events.off('data-updated', refreshConfig);
 		};
 	});
 
-function buildOption({ data, chartIndex }: { data: DataWrapper; chartIndex: number }) {
-	const result = buildScatterOptions(data, chartIndex, chartConfig);
-	return {
-		option: result.option,
-		errors: result.errors,
-		defaultStackState: createDefaultConfigStackState(chartConfig),
-	};
-}
+	function buildOption({ data, chartIndex }: { data: DataWrapper; chartIndex: number }) {
+		const result = buildScatterOptions(data, chartIndex, chartConfig);
+		return {
+			option: result.option,
+			errors: result.errors,
+			defaultStackState: createDefaultConfigStackState(chartConfig),
+		};
+	}
 </script>
 
 <PlotGrid view={view} xAxisLabel={chartConfig.xAxisLabel} buildOption={buildOption}></PlotGrid>

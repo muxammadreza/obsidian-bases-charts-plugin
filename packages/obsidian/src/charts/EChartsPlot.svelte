@@ -17,11 +17,10 @@
 		onRenderError?: (message: string) => void;
 	}
 
-	let { option, width, height, chartName, xAxisLabel, onDataPointClick, onDataPointHover, onRenderError }: Props =
-		$props();
+	let { option, width, height, chartName, xAxisLabel, onDataPointClick, onDataPointHover, onRenderError }: Props = $props();
 
 	let renderError: string | null = $state(null);
-let runtime = $state(createChartInstance({ initialOption: option, onError: handleRuntimeError }));
+	let runtime = $state(createChartInstance({ initialOption: option, onError: handleRuntimeError }));
 
 	function reportError(error: unknown): void {
 		const message = error instanceof Error ? error.message : 'Unknown rendering error.';
@@ -80,10 +79,7 @@ let runtime = $state(createChartInstance({ initialOption: option, onError: handl
 			<p class="echarts-error-message">{renderError}</p>
 		</div>
 	{:else}
-		<ChartPanel
-			chart={runtime.chart}
-			aria-label={`ECharts plot for ${chartName} with X axis ${xAxisLabel}`}
-		/>
+		<ChartPanel chart={runtime.chart} aria-label={`ECharts plot for ${chartName} with X axis ${xAxisLabel}`} />
 	{/if}
 </div>
 

@@ -1,40 +1,84 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import type { ConfigStackPatch, ConfigStackState } from 'packages/obsidian/src/charts/config-stack/types';
+	import { cloneConfigStackState, createEmptyConfigStackState } from 'packages/obsidian/src/charts/config-stack/state';
+	import type { ConfigStackState } from 'packages/obsidian/src/charts/config-stack/types';
 
 	interface Props {
 		chartId: string;
-		state: ConfigStackState;
+		state?: ConfigStackState;
 	}
 
-	let { chartId, state }: Props = $props();
+	const props = $props<Props>();
 
-	const dispatch = createEventDispatcher<{ change: ConfigStackPatch }>();
+	let chartId = $state(props.chartId);
+	let state = $state(cloneConfigStackState(props.state ?? createEmptyConfigStackState()));
+	let providedSignature = '';
 
-	function emitChange<T extends keyof ConfigStackState>(section: T, changes: Partial<ConfigStackState[T]>): void {
-		dispatch('change', {
-			section,
-			changes,
-		});
+	const dispatch = createEventDispatcher<{ change: ConfigStackState }>();
+
+	$effect(() => {
+		chartId = props.chartId;
+	});
+
+	$effect(() => {
+		const providedState = props.state ?? createEmptyConfigStackState();
+		const signature = JSON.stringify(providedState);
+		if (signature === providedSignature) {
+			return;
+		}
+		providedSignature = signature;
+		state = cloneConfigStackState(providedState);
+	});
+
+	function publishChange(next: ConfigStackState): void {
+		state = next;
+		dispatch('change', cloneConfigStackState(next));
 	}
 
-	function handleNumberChange(section: keyof ConfigStackState, key: string, event: Event): void {
+	function updateSection<T extends keyof ConfigStackState>(section: T, changes: Partial<ConfigStackState[T]>): void {
+		const nextState: ConfigStackState = {
+			...state,
+			[section]: {
+				...state[section],
+				...changes,
+			},
+		};
+		publishChange(nextState);
+	}
+
+	function handleAxisNumberChange(key: 'yMin' | 'yMax', event: Event): void {
 		const target = event.currentTarget as HTMLInputElement;
-		const value = target.value.trim();
-		const next = value === '' ? null : Number(value);
-		emitChange(section, { [key]: Number.isFinite(next) ? next : null } as Partial<ConfigStackState[typeof section]>);
+		const raw = target.value.trim();
+		if (raw === '') {
+			updateSection('axes', { [key]: null } as Partial<ConfigStackState['axes']>);
+			return;
+		}
+		const parsed = Number(raw);
+		const value = Number.isFinite(parsed) ? parsed : null;
+		updateSection('axes', { [key]: value } as Partial<ConfigStackState['axes']>);
 	}
 
-	function handleToggle(section: keyof ConfigStackState, key: string, event: Event): void {
+	function handleSymbolSizeChange(event: Event): void {
 		const target = event.currentTarget as HTMLInputElement;
-		emitChange(section, { [key]: target.checked } as Partial<ConfigStackState[typeof section]>);
+		const parsed = Number(target.value);
+		if (!Number.isFinite(parsed)) {
+			target.value = state.series.symbolSize.toString();
+			return;
+		}
+		const size = Math.min(40, Math.max(1, Math.round(parsed)));
+		updateSection('series', { symbolSize: size });
+		target.value = size.toString();
 	}
 
-	function handleSelect<T extends keyof ConfigStackState>(section: T, key: keyof ConfigStackState[T], event: Event): void {
+	function handleToggle<T extends keyof ConfigStackState, K extends keyof ConfigStackState[T]>(section: T, key: K, event: Event): void {
+		const target = event.currentTarget as HTMLInputElement;
+		updateSection(section, { [key]: target.checked } as Partial<ConfigStackState[T]>);
+	}
+
+	function handleSelect<T extends keyof ConfigStackState, K extends keyof ConfigStackState[T]>(section: T, key: K, event: Event): void {
 		const target = event.currentTarget as HTMLInputElement | HTMLSelectElement;
-		emitChange(section, { [key]: target.value } as Partial<ConfigStackState[T]>);
+		updateSection(section, { [key]: target.value as ConfigStackState[T][K] } as Partial<ConfigStackState[T]>);
 	}
-
 </script>
 
 <div class="config-panel" data-testid="config-stack-panel">
@@ -43,33 +87,23 @@
 		<div class="section-body">
 			<label>
 				<span>Y minimum</span>
-				<input
-					type="number"
-					placeholder="auto"
-					value={state.axes.yMin ?? ''}
-					onchange={(event) => handleNumberChange('axes', 'yMin', event)}
-				/>
+				<input type="number" placeholder="auto" value={state.axes.yMin ?? ''} onchange={event => handleAxisNumberChange('yMin', event)} />
 			</label>
 			<label>
 				<span>Y maximum</span>
-				<input
-					type="number"
-					placeholder="auto"
-					value={state.axes.yMax ?? ''}
-					onchange={(event) => handleNumberChange('axes', 'yMax', event)}
-				/>
+				<input type="number" placeholder="auto" value={state.axes.yMax ?? ''} onchange={event => handleAxisNumberChange('yMax', event)} />
 			</label>
 			<label class="toggle" data-testid="config-stack-axes-gridlines">
-				<input type="checkbox" checked={state.axes.showGridLines} onchange={(event) => handleToggle('axes', 'showGridLines', event)} />
+				<input type="checkbox" checked={state.axes.showGridLines} onchange={event => handleToggle('axes', 'showGridLines', event)} />
 				<span>Show grid lines</span>
 			</label>
 			<label class="toggle">
-				<input type="checkbox" checked={state.axes.invertX} onchange={(event) => handleToggle('axes', 'invertX', event)} />
+				<input type="checkbox" checked={state.axes.invertX} onchange={event => handleToggle('axes', 'invertX', event)} />
 				<span>Invert X axis</span>
 			</label>
 			<label>
 				<span>X axis type</span>
-				<select value={state.axes.xType} onchange={(event) => handleSelect('axes', 'xType', event)}>
+				<select value={state.axes.xType} onchange={event => handleSelect('axes', 'xType', event)}>
 					<option value="auto">Auto</option>
 					<option value="value">Numeric</option>
 					<option value="category">Category</option>
@@ -83,33 +117,27 @@
 		<header id={`config-${chartId}-series`}>Series</header>
 		<div class="section-body">
 			<label class="toggle" data-testid="config-stack-series-labels">
-				<input type="checkbox" checked={state.series.showLabels} onchange={(event) => handleToggle('series', 'showLabels', event)} />
+				<input type="checkbox" checked={state.series.showLabels} onchange={event => handleToggle('series', 'showLabels', event)} />
 				<span>Display labels</span>
 			</label>
 			<label class="toggle">
-				<input type="checkbox" checked={state.series.showPercentages} onchange={(event) => handleToggle('series', 'showPercentages', event)} />
+				<input type="checkbox" checked={state.series.showPercentages} onchange={event => handleToggle('series', 'showPercentages', event)} />
 				<span>Show as percentages</span>
 			</label>
 			<label class="toggle">
-				<input type="checkbox" checked={state.series.smoothLines} onchange={(event) => handleToggle('series', 'smoothLines', event)} />
+				<input type="checkbox" checked={state.series.smoothLines} onchange={event => handleToggle('series', 'smoothLines', event)} />
 				<span>Smooth lines</span>
 			</label>
 			<label class="toggle">
-				<input type="checkbox" checked={state.series.stackSeries} onchange={(event) => handleToggle('series', 'stackSeries', event)} />
+				<input type="checkbox" checked={state.series.stackSeries} onchange={event => handleToggle('series', 'stackSeries', event)} />
 				<span>Stack series</span>
 			</label>
 			<label>
 				<span>Symbol size</span>
-				<input
-					type="number"
-					min="1"
-					max="40"
-					value={state.series.symbolSize}
-					onchange={(event) => handleNumberChange('series', 'symbolSize', event)}
-				/>
+				<input type="number" min="1" max="40" value={state.series.symbolSize} onchange={handleSymbolSizeChange} />
 			</label>
 			<label class="toggle">
-				<input type="checkbox" checked={state.series.animation} onchange={(event) => handleToggle('series', 'animation', event)} />
+				<input type="checkbox" checked={state.series.animation} onchange={event => handleToggle('series', 'animation', event)} />
 				<span>Enable animation</span>
 			</label>
 		</div>
@@ -119,12 +147,12 @@
 		<header id={`config-${chartId}-legend`}>Legend</header>
 		<div class="section-body">
 			<label class="toggle" data-testid="config-stack-legend-visible">
-				<input type="checkbox" checked={state.legend.visible} onchange={(event) => handleToggle('legend', 'visible', event)} />
+				<input type="checkbox" checked={state.legend.visible} onchange={event => handleToggle('legend', 'visible', event)} />
 				<span>Show legend</span>
 			</label>
 			<label>
 				<span>Position</span>
-				<select value={state.legend.position} onchange={(event) => handleSelect('legend', 'position', event)}>
+				<select value={state.legend.position} onchange={event => handleSelect('legend', 'position', event)}>
 					<option value="top">Top</option>
 					<option value="right">Right</option>
 					<option value="bottom">Bottom</option>
@@ -133,7 +161,7 @@
 			</label>
 			<label>
 				<span>Orientation</span>
-				<select value={state.legend.orient} onchange={(event) => handleSelect('legend', 'orient', event)}>
+				<select value={state.legend.orient} onchange={event => handleSelect('legend', 'orient', event)}>
 					<option value="horizontal">Horizontal</option>
 					<option value="vertical">Vertical</option>
 				</select>
@@ -145,18 +173,18 @@
 		<header id={`config-${chartId}-tooltip`}>Tooltip</header>
 		<div class="section-body">
 			<label class="toggle">
-				<input type="checkbox" checked={state.tooltip.show} onchange={(event) => handleToggle('tooltip', 'show', event)} />
+				<input type="checkbox" checked={state.tooltip.show} onchange={event => handleToggle('tooltip', 'show', event)} />
 				<span>Enable tooltip</span>
 			</label>
 			<label>
 				<span>Trigger</span>
-				<select value={state.tooltip.trigger} onchange={(event) => handleSelect('tooltip', 'trigger', event)}>
+				<select value={state.tooltip.trigger} onchange={event => handleSelect('tooltip', 'trigger', event)}>
 					<option value="item">Item</option>
 					<option value="axis">Axis</option>
 				</select>
 			</label>
 			<label class="toggle">
-				<input type="checkbox" checked={state.tooltip.shared} onchange={(event) => handleToggle('tooltip', 'shared', event)} />
+				<input type="checkbox" checked={state.tooltip.shared} onchange={event => handleToggle('tooltip', 'shared', event)} />
 				<span>Shared tooltip</span>
 			</label>
 		</div>
@@ -167,7 +195,7 @@
 		<div class="section-body">
 			<label>
 				<span>Sampling</span>
-				<select value={state.dataset.sampling} onchange={(event) => handleSelect('dataset', 'sampling', event)}>
+				<select value={state.dataset.sampling} onchange={event => handleSelect('dataset', 'sampling', event)}>
 					<option value="auto">Auto</option>
 					<option value="lttb">Largest triangle</option>
 					<option value="average">Average</option>
@@ -177,7 +205,7 @@
 			</label>
 			<label>
 				<span>Sort order</span>
-				<select value={state.dataset.sortOrder} onchange={(event) => handleSelect('dataset', 'sortOrder', event)}>
+				<select value={state.dataset.sortOrder} onchange={event => handleSelect('dataset', 'sortOrder', event)}>
 					<option value="none">None</option>
 					<option value="ascending">Ascending</option>
 					<option value="descending">Descending</option>
@@ -190,15 +218,19 @@
 		<header id={`config-${chartId}-interactions`}>Interactions</header>
 		<div class="section-body">
 			<label class="toggle">
-				<input type="checkbox" checked={state.interactions.brushEnabled} onchange={(event) => handleToggle('interactions', 'brushEnabled', event)} />
+				<input type="checkbox" checked={state.interactions.brushEnabled} onchange={event => handleToggle('interactions', 'brushEnabled', event)} />
 				<span>Enable brush</span>
 			</label>
 			<label class="toggle">
-				<input type="checkbox" checked={state.interactions.dataZoomEnabled} onchange={(event) => handleToggle('interactions', 'dataZoomEnabled', event)} />
+				<input
+					type="checkbox"
+					checked={state.interactions.dataZoomEnabled}
+					onchange={event => handleToggle('interactions', 'dataZoomEnabled', event)}
+				/>
 				<span>Enable data zoom</span>
 			</label>
 			<label class="toggle">
-				<input type="checkbox" checked={state.interactions.hoverLink} onchange={(event) => handleToggle('interactions', 'hoverLink', event)} />
+				<input type="checkbox" checked={state.interactions.hoverLink} onchange={event => handleToggle('interactions', 'hoverLink', event)} />
 				<span>Link hover highlights</span>
 			</label>
 		</div>
@@ -209,7 +241,7 @@
 		<div class="section-body">
 			<label>
 				<span>Theme</span>
-				<select value={state.theming.themeId} onchange={(event) => handleSelect('theming', 'themeId', event)}>
+				<select value={state.theming.themeId} onchange={event => handleSelect('theming', 'themeId', event)}>
 					<option value="auto">Auto</option>
 					<option value="light">Light</option>
 					<option value="dark">Dark</option>
@@ -217,7 +249,7 @@
 			</label>
 			<label>
 				<span>Accent color</span>
-				<input type="color" value={state.theming.accentColor} onchange={(event) => handleSelect('theming', 'accentColor', event)} />
+				<input type="color" value={state.theming.accentColor} onchange={event => handleSelect('theming', 'accentColor', event)} />
 			</label>
 		</div>
 	</section>

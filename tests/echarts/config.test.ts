@@ -114,14 +114,14 @@ await import('../obsidianMock');
 
 describe('buildChartConfig', () => {
 	test('produces bar configuration with toggles and overrides', () => {
-	const view = createViewStub({
-		configValues: {
-			[CHART_SETTINGS.SHOW_LABELS]: false,
-			[CHART_SETTINGS.SHOW_PERCENTAGES]: true,
-		},
-		yDomain: { min: 0, max: 42, synced: true },
-		displayNames: { propX: 'Prop X' },
-	});
+		const view = createViewStub({
+			configValues: {
+				[CHART_SETTINGS.SHOW_LABELS]: false,
+				[CHART_SETTINGS.SHOW_PERCENTAGES]: true,
+			},
+			yDomain: { min: 0, max: 42, synced: true },
+			displayNames: { propX: 'Prop X' },
+		});
 
 		const chartType: ChartKind = 'bar';
 		const config = buildChartConfig(view, { chartType });
@@ -158,17 +158,17 @@ describe('option builders', () => {
 		const view = createViewStub();
 		const wrapper: DataWrapper = new GroupSeparatedData(view, processed, ['Only Group']);
 
-	const config: ChartConfigState = {
-		xAxisLabel: 'Prop X →',
-		yAxisLabelBase: '↑',
-		multiChartMode: MultiChartMode.PROPERTY,
-		yDomain: [null, null],
-		showLabels: true,
-		showPercentages: false,
-	};
+		const config: ChartConfigState = {
+			xAxisLabel: 'Prop X →',
+			yAxisLabelBase: '↑',
+			multiChartMode: MultiChartMode.PROPERTY,
+			yDomain: [null, null],
+			showLabels: true,
+			showPercentages: false,
+		};
 
-	const result = buildBarOptions(wrapper, 0, config);
-	expect(result.legendEntries).toHaveLength(1);
-	expect(result.errors).toEqual([]);
-});
+		const result = buildBarOptions(wrapper, 0, config);
+		expect(result.legendEntries).toHaveLength(1);
+		expect(result.errors).toEqual([]);
+	});
 });

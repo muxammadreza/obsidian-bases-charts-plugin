@@ -2,6 +2,7 @@ import '../happydom';
 
 import { describe, expect, mock, test, beforeEach } from 'bun:test';
 import type { EChartsOption } from 'packages/obsidian/src/echarts/options';
+import { getResolvedAccentColor, getResolvedObsidianPalette } from 'packages/obsidian/src/utils/utils';
 
 const registerTheme = mock(() => {});
 const setOption = mock<(option: EChartsOption, opts?: unknown) => void>(() => {});
@@ -79,17 +80,8 @@ describe('echarts runtime', () => {
 			throw new Error('Expected setOption to be called with initialization parameters');
 		}
 		const [firstCall] = lastInitialCall;
-		expect(firstCall.color).toEqual([
-			'var(--color-blue)',
-			'var(--color-orange)',
-			'var(--color-red)',
-			'var(--color-cyan)',
-			'var(--color-green)',
-			'var(--color-yellow)',
-			'var(--color-purple)',
-			'var(--color-pink)',
-			'var(--bases-charts-accent)',
-		]);
+		const expectedPalette = [...getResolvedObsidianPalette(), getResolvedAccentColor()];
+		expect(firstCall.color).toEqual(expectedPalette);
 		expect(firstCall.tooltip?.backgroundColor).toBe('rgba(0, 0, 0, 0.85)');
 
 		expect(on).toHaveBeenCalledWith('mouseout', expect.any(Function));

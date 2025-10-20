@@ -1,9 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { RuntimeDebugOrchestrator } from '../../automation/dev/RuntimeDebugOrchestrator';
-import type {
-	LifecycleParticipant,
-	SteeringDirectiveEmitter,
-} from '../../automation/dev/RuntimeDebugOrchestrator';
+import type { LifecycleParticipant, SteeringDirectiveEmitter } from '../../automation/dev/RuntimeDebugOrchestrator';
 
 class TestParticipant implements LifecycleParticipant {
 	public startCount = 0;
@@ -59,10 +56,7 @@ const silentLogger = {
 describe('RuntimeDebugOrchestrator', () => {
 	test('starts participants and emits steering directives', async () => {
 		const callOrder: string[] = [];
-		const participants = [
-			new TestParticipant('dev', callOrder),
-			new TestParticipant('obsidian', callOrder),
-		];
+		const participants = [new TestParticipant('dev', callOrder), new TestParticipant('obsidian', callOrder)];
 		const emitter = new TestSteeringEmitter(callOrder);
 		const orchestrator = new RuntimeDebugOrchestrator({
 			participants,
@@ -76,9 +70,7 @@ describe('RuntimeDebugOrchestrator', () => {
 		expect(participants.every(p => p.startCount === 1)).toBe(true);
 		expect(emitter.startupCount).toBe(1);
 		expect(callOrder).toContain('steering:startup');
-		const startPositions = callOrder
-			.map((token, index) => ({ token, index }))
-			.filter(entry => entry.token.startsWith('start:'));
+		const startPositions = callOrder.map((token, index) => ({ token, index })).filter(entry => entry.token.startsWith('start:'));
 		const steeringIndex = callOrder.indexOf('steering:startup');
 		for (const { index } of startPositions) {
 			expect(index).toBeLessThan(steeringIndex);
@@ -117,9 +109,7 @@ describe('RuntimeDebugOrchestrator', () => {
 		});
 
 		await orchestrator.start();
-		await expect(orchestrator.start()).rejects.toThrow(
-			'RuntimeDebugOrchestrator.start() called while already running',
-		);
+		await expect(orchestrator.start()).rejects.toThrow('RuntimeDebugOrchestrator.start() called while already running');
 		await orchestrator.stop('double-start-test');
 	});
 

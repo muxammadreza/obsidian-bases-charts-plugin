@@ -5,34 +5,28 @@ import type { LifecycleParticipant } from '../RuntimeDebugOrchestrator';
 
 export type DevWatcherEvent =
 	| {
-		readonly type: 'build-log';
-		readonly level: 'info' | 'warn';
-		readonly stream: 'stdout' | 'stderr';
-		readonly message: string;
-		readonly timestamp: number;
-	}
+			readonly type: 'build-log';
+			readonly level: 'info' | 'warn';
+			readonly stream: 'stdout' | 'stderr';
+			readonly message: string;
+			readonly timestamp: number;
+	  }
 	| {
-		readonly type: 'build-error';
-		readonly message: string;
-		readonly timestamp: number;
-	}
+			readonly type: 'build-error';
+			readonly message: string;
+			readonly timestamp: number;
+	  }
 	| {
-		readonly type: 'build-status';
-		readonly status: 'starting' | 'exited' | 'stopped' | 'clean';
-		readonly timestamp: number;
-		readonly exitCode?: number;
-		readonly reason?: string;
-	};
+			readonly type: 'build-status';
+			readonly status: 'starting' | 'exited' | 'stopped' | 'clean';
+			readonly timestamp: number;
+			readonly exitCode?: number;
+			readonly reason?: string;
+	  };
 
-type SpawnedProcess = Pick<
-	Subprocess<'pipe', 'pipe', 'inherit'>,
-	'kill' | 'exited' | 'stdout' | 'stderr'
->;
+type SpawnedProcess = Pick<Subprocess<'pipe', 'pipe', 'inherit'>, 'kill' | 'exited' | 'stdout' | 'stderr'>;
 
-type SpawnFunction = (
-	command: string[],
-	options: Parameters<typeof Bun.spawn>[1],
-) => SpawnedProcess;
+type SpawnFunction = (command: string[], options: Parameters<typeof Bun.spawn>[1]) => SpawnedProcess;
 
 export interface DevWatcherProcessOptions {
 	cwd?: string;
@@ -48,12 +42,7 @@ export interface DevWatcherProcessOptions {
 	};
 }
 
-const DEFAULT_ERROR_PATTERNS = [
-	/(^|\s)error(?!s?:\s*0\b)/i,
-	/✘/,
-	/×/,
-	/failed/i,
-];
+const DEFAULT_ERROR_PATTERNS = [/(^|\s)error(?!s?:\s*0\b)/i, /✘/, /×/, /failed/i];
 
 const DEFAULT_SUCCESS_PATTERNS = [
 	/\bready in [0-9.]+\s*(ms|s)/i,
@@ -91,13 +80,11 @@ export class DevWatcherProcess implements LifecycleParticipant {
 		this.errorMatchers = options.errorMatchers ?? DEFAULT_ERROR_PATTERNS;
 		this.successMatchers = options.successMatchers ?? DEFAULT_SUCCESS_PATTERNS;
 		this.spawn = options.spawn ?? ((command, spawnOptions) => Bun.spawn(command, spawnOptions));
-		this.logger =
-			options.logger ??
-			{
-				info: message => console.log(`${CMD_FMT.FgGreen}[dev-watcher]${CMD_FMT.Reset} ${message}`),
-				warn: message => console.warn(`${CMD_FMT.FgYellow}[dev-watcher]${CMD_FMT.Reset} ${message}`),
-				error: message => console.error(`${CMD_FMT.FgRed}[dev-watcher]${CMD_FMT.Reset} ${message}`),
-			};
+		this.logger = options.logger ?? {
+			info: message => console.log(`${CMD_FMT.FgGreen}[dev-watcher]${CMD_FMT.Reset} ${message}`),
+			warn: message => console.warn(`${CMD_FMT.FgYellow}[dev-watcher]${CMD_FMT.Reset} ${message}`),
+			error: message => console.error(`${CMD_FMT.FgRed}[dev-watcher]${CMD_FMT.Reset} ${message}`),
+		};
 	}
 
 	public on(listener: (event: DevWatcherEvent) => void): void {
@@ -161,9 +148,7 @@ export class DevWatcherProcess implements LifecycleParticipant {
 				});
 			})
 			.catch(error => {
-				this.logger.error(`Build watcher exited with error: ${
-					error instanceof Error ? error.message : String(error)
-				}`);
+				this.logger.error(`Build watcher exited with error: ${error instanceof Error ? error.message : String(error)}`);
 			})
 			.finally(() => {
 				this.process = null;
@@ -189,17 +174,13 @@ export class DevWatcherProcess implements LifecycleParticipant {
 			await this.stdoutReaderCancellation?.();
 			await this.stderrReaderCancellation?.();
 		} catch (error) {
-			this.logger.warn(`Failed cancelling stream readers: ${
-				error instanceof Error ? error.message : String(error)
-			}`);
+			this.logger.warn(`Failed cancelling stream readers: ${error instanceof Error ? error.message : String(error)}`);
 		}
 
 		try {
 			this.process.kill();
 		} catch (error) {
-			this.logger.warn(`Failed to kill build watcher: ${
-				error instanceof Error ? error.message : String(error)
-			}`);
+			this.logger.warn(`Failed to kill build watcher: ${error instanceof Error ? error.message : String(error)}`);
 		}
 
 		this.process = null;
@@ -211,25 +192,16 @@ export class DevWatcherProcess implements LifecycleParticipant {
 		});
 	}
 
-	private async cancelReader(
-		reader: ReadableStreamDefaultReader<Uint8Array>,
-		abort: AbortController,
-	): Promise<void> {
+	private async cancelReader(reader: ReadableStreamDefaultReader<Uint8Array>, abort: AbortController): Promise<void> {
 		abort.abort();
 		try {
 			await reader.cancel();
 		} catch (error) {
-			this.logger.warn(`Stream cancellation failed: ${
-				error instanceof Error ? error.message : String(error)
-			}`);
+			this.logger.warn(`Stream cancellation failed: ${error instanceof Error ? error.message : String(error)}`);
 		}
 	}
 
-	private async readStream(
-		reader: ReadableStreamDefaultReader<Uint8Array>,
-		origin: 'stdout' | 'stderr',
-		signal: AbortSignal,
-	): Promise<void> {
+	private async readStream(reader: ReadableStreamDefaultReader<Uint8Array>, origin: 'stdout' | 'stderr', signal: AbortSignal): Promise<void> {
 		const decoder = new TextDecoder();
 		let buffer = '';
 
@@ -262,9 +234,7 @@ export class DevWatcherProcess implements LifecycleParticipant {
 			}
 		} catch (error) {
 			if (!signal.aborted) {
-				this.logger.warn(`Failed reading ${origin}: ${
-					error instanceof Error ? error.message : String(error)
-				}`);
+				this.logger.warn(`Failed reading ${origin}: ${error instanceof Error ? error.message : String(error)}`);
 			}
 		} finally {
 			reader.releaseLock();

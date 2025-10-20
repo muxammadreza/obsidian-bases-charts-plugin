@@ -8,10 +8,7 @@ interface DryRunOptions {
 
 export function createDryRunParticipants(options: DryRunOptions): LifecycleParticipant[] {
 	const { multiplexer, intervalMs = 500 } = options;
-	return [
-		new DryRunBuildParticipant(multiplexer, intervalMs),
-		new DryRunRuntimeParticipant(multiplexer, intervalMs),
-	];
+	return [new DryRunBuildParticipant(multiplexer, intervalMs), new DryRunRuntimeParticipant(multiplexer, intervalMs)];
 }
 
 class DryRunBuildParticipant implements LifecycleParticipant {

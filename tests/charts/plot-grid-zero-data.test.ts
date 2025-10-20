@@ -8,7 +8,7 @@ const { createEmptyConfigStackState } = await import('packages/obsidian/src/char
 
 describe('PlotGrid zero-data handling', () => {
 	test('skips option builder when no plottable data', async () => {
-	const buildOption = mock(() => ({ option: {}, errors: [], defaultStackState: createEmptyConfigStackState() }));
+		const buildOption = mock(() => ({ option: {}, errors: [], defaultStackState: createEmptyConfigStackState() }));
 		const view = {
 			processData: () =>
 				({

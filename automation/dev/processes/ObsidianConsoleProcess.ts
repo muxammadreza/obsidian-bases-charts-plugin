@@ -6,31 +6,28 @@ import type { LifecycleParticipant } from '../RuntimeDebugOrchestrator';
 
 export type ObsidianConsoleEvent =
 	| {
-		readonly type: 'runtime-log';
-		readonly level: 'info' | 'warn';
-		readonly message: string;
-		readonly timestamp: number;
-		readonly origin: 'console' | 'log';
-	}
+			readonly type: 'runtime-log';
+			readonly level: 'info' | 'warn';
+			readonly message: string;
+			readonly timestamp: number;
+			readonly origin: 'console' | 'log';
+	  }
 	| {
-		readonly type: 'runtime-error';
-		readonly message: string;
-		readonly timestamp: number;
-		readonly origin: 'console' | 'log';
-	}
+			readonly type: 'runtime-error';
+			readonly message: string;
+			readonly timestamp: number;
+			readonly origin: 'console' | 'log';
+	  }
 	| {
-		readonly type: 'runtime-status';
-		readonly status: 'attaching' | 'attached' | 'detached' | 'error';
-		readonly timestamp: number;
-		readonly detail?: string;
-	};
+			readonly type: 'runtime-status';
+			readonly status: 'attaching' | 'attached' | 'detached' | 'error';
+			readonly timestamp: number;
+			readonly detail?: string;
+	  };
 
 type SpawnedProcess = Pick<Subprocess<'ignore', 'ignore', 'inherit'>, 'kill' | 'exited'>;
 
-type SpawnFunction = (
-	command: string[],
-	options: Parameters<typeof Bun.spawn>[1],
-) => SpawnedProcess;
+type SpawnFunction = (command: string[], options: Parameters<typeof Bun.spawn>[1]) => SpawnedProcess;
 
 type ConnectFunction = (options: { host: string; port: number }) => Promise<CDPClient>;
 
@@ -105,9 +102,7 @@ export interface ObsidianConsoleProcessOptions {
 	};
 }
 
-function isRuntimeExceptionEvent(
-	payload: ConsoleAPICalledEvent | RuntimeExceptionThrownEvent,
-): payload is RuntimeExceptionThrownEvent {
+function isRuntimeExceptionEvent(payload: ConsoleAPICalledEvent | RuntimeExceptionThrownEvent): payload is RuntimeExceptionThrownEvent {
 	return (payload as RuntimeExceptionThrownEvent).exceptionDetails !== undefined;
 }
 
@@ -127,11 +122,7 @@ export async function defaultConnect(options: { host: string; port: number }): P
 		const connect = (criModule.default ?? criModule) as (opts: unknown) => Promise<CDPClient>;
 		return await connect({ host, port });
 	} catch (error) {
-		throw new Error(
-			`Unable to connect to Chrome DevTools Protocol at ${host}:${port}: ${
-				error instanceof Error ? error.message : String(error)
-			}`,
-		);
+		throw new Error(`Unable to connect to Chrome DevTools Protocol at ${host}:${port}: ${error instanceof Error ? error.message : String(error)}`);
 	}
 }
 
@@ -166,20 +157,17 @@ export class ObsidianConsoleProcess implements LifecycleParticipant {
 		this.port = options.port ?? 39200;
 		this.reuseExisting = options.reuseExisting ?? true;
 		this.launchCommand = [...(options.launchCommand ?? getDefaultLaunchCommand())];
-		this.spawn =
-			options.spawn ?? ((command, spawnOptions) => Bun.spawn(command, { ...spawnOptions, stdout: 'ignore', stderr: 'ignore' }));
+		this.spawn = options.spawn ?? ((command, spawnOptions) => Bun.spawn(command, { ...spawnOptions, stdout: 'ignore', stderr: 'ignore' }));
 		this.connect = options.connect ?? defaultConnect;
 		this.focusCommand = options.focusCommand;
 		this.connectAttempts = options.connectAttempts ?? 20;
 		this.connectIntervalMs = options.connectIntervalMs ?? 500;
 		this.autoLaunch = options.autoLaunch ?? true;
-		this.logger =
-			options.logger ??
-			{
-				info: message => console.log(`${CMD_FMT.FgGreen}[obsidian-console]${CMD_FMT.Reset} ${message}`),
-				warn: message => console.warn(`${CMD_FMT.FgYellow}[obsidian-console]${CMD_FMT.Reset} ${message}`),
-				error: message => console.error(`${CMD_FMT.FgRed}[obsidian-console]${CMD_FMT.Reset} ${message}`),
-			};
+		this.logger = options.logger ?? {
+			info: message => console.log(`${CMD_FMT.FgGreen}[obsidian-console]${CMD_FMT.Reset} ${message}`),
+			warn: message => console.warn(`${CMD_FMT.FgYellow}[obsidian-console]${CMD_FMT.Reset} ${message}`),
+			error: message => console.error(`${CMD_FMT.FgRed}[obsidian-console]${CMD_FMT.Reset} ${message}`),
+		};
 	}
 
 	public on(listener: (event: ObsidianConsoleEvent) => void): void {
@@ -238,9 +226,7 @@ export class ObsidianConsoleProcess implements LifecycleParticipant {
 		}
 
 		if (!this.autoLaunch) {
-			throw new Error(
-				'Unable to connect to Obsidian dev console and auto-launch is disabled. Start Obsidian manually or enable auto-launch.',
-			);
+			throw new Error('Unable to connect to Obsidian dev console and auto-launch is disabled. Start Obsidian manually or enable auto-launch.');
 		}
 
 		await this.launchObsidian();
@@ -249,7 +235,7 @@ export class ObsidianConsoleProcess implements LifecycleParticipant {
 			throw new Error('Unable to connect to Obsidian dev console after launching.');
 		}
 		return client;
-}
+	}
 
 	private async attachAndInitialize(): Promise<void> {
 		const client = await this.attach();
@@ -286,9 +272,7 @@ export class ObsidianConsoleProcess implements LifecycleParticipant {
 		}
 
 		if (throwOnFailure) {
-			throw lastError instanceof Error
-				? lastError
-				: new Error(`Failed to connect to Obsidian dev console at ${this.host}:${this.port}`);
+			throw lastError instanceof Error ? lastError : new Error(`Failed to connect to Obsidian dev console at ${this.host}:${this.port}`);
 		}
 
 		return null;
@@ -325,9 +309,7 @@ export class ObsidianConsoleProcess implements LifecycleParticipant {
 			await this.focusCommand();
 			this.logger.info('Issued focus command for bases-preview.base');
 		} catch (error) {
-			this.logger.warn(
-				`Failed to focus bases-preview.base: ${error instanceof Error ? error.message : String(error)}`,
-			);
+			this.logger.warn(`Failed to focus bases-preview.base: ${error instanceof Error ? error.message : String(error)}`);
 		}
 	}
 
@@ -357,10 +339,7 @@ export class ObsidianConsoleProcess implements LifecycleParticipant {
 	private handleExceptionEvent(event: RuntimeExceptionThrownEvent): void {
 		const details = event.exceptionDetails;
 		const timestamp = this.normalizeTimestamp(details.timestamp);
-		const detailText =
-			details.text ??
-			details.exception?.description ??
-			this.stringifyValue(details.exception?.value ?? event.message);
+		const detailText = details.text ?? details.exception?.description ?? this.stringifyValue(details.exception?.value ?? event.message);
 		const stackFrames = details.stackTrace?.callFrames ?? [];
 		const prettyStack = stackFrames
 			.map(frame => `${frame.functionName || '(anonymous)'} (${frame.url}:${frame.lineNumber + 1}:${frame.columnNumber + 1})`)
@@ -407,7 +386,7 @@ export class ObsidianConsoleProcess implements LifecycleParticipant {
 		await this.cleanupClient();
 		this.logger.warn('Lost connection to Obsidian dev console; waiting for manual relaunch.');
 		this.scheduleReconnect();
-}
+	}
 
 	private scheduleReconnect(): void {
 		if (this.reconnectTimer || this.stopping) {
@@ -549,11 +528,7 @@ export class ObsidianConsoleProcess implements LifecycleParticipant {
 		try {
 			await this.client.close();
 		} catch (error) {
-			this.logger.warn(
-				`Failed to close Obsidian console client: ${
-					error instanceof Error ? error.message : String(error)
-				}`,
-			);
+			this.logger.warn(`Failed to close Obsidian console client: ${error instanceof Error ? error.message : String(error)}`);
 		}
 
 		this.client = null;
@@ -570,9 +545,7 @@ export class ObsidianConsoleProcess implements LifecycleParticipant {
 		try {
 			this.process.kill();
 		} catch (error) {
-			this.logger.warn(`Failed to terminate Obsidian process: ${
-				error instanceof Error ? error.message : String(error)
-			}`);
+			this.logger.warn(`Failed to terminate Obsidian process: ${error instanceof Error ? error.message : String(error)}`);
 		}
 
 		this.process = null;

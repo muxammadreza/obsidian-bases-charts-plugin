@@ -1,4 +1,5 @@
 # Product Guidance
+
 - Describe the plugin as an Obsidian Bases extension that registers scatter, line, and bar chart views via `packages/obsidian/src/main.ts` so users can visualize Base data without leaving Obsidian.
 - Emphasize multi-chart support driven by `ChartView.processData` (see `packages/obsidian/src/ChartView.ts`) where grouping either splits charts by selected Y properties or Base groupings.
 - Note that X-axis values must resolve through `parseValueAsX` and Y-axis series must parse as numbers (`packages/obsidian/src/utils/utils.ts`); highlight that non-numeric Y data is ignored rather than coerced.
