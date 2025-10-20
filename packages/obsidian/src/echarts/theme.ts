@@ -3,13 +3,25 @@ import { OBSIDIAN_COLOR_PALETTE, OBSIDIAN_DEFAULT_SINGLE_COLOR } from 'packages/
 
 const THEME_NAME = 'obsidian-bases-charts';
 let registered = false;
+let cachedTheme: echarts.EChartsCoreOption | null = null;
 
 export function ensureEChartsTheme(): string {
 	if (!registered) {
-		echarts.registerTheme(THEME_NAME, buildThemeDefinition());
+		const definition = buildThemeDefinition();
+		cachedTheme = definition;
+		echarts.registerTheme(THEME_NAME, definition);
 		registered = true;
 	}
 	return THEME_NAME;
+}
+
+export function getEChartsThemeDefinition(): echarts.EChartsCoreOption {
+	if (cachedTheme) {
+		return cachedTheme;
+	}
+	const definition = buildThemeDefinition();
+	cachedTheme = definition;
+	return definition;
 }
 
 function buildThemeDefinition(): echarts.EChartsCoreOption {

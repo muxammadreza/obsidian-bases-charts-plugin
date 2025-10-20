@@ -1,9 +1,13 @@
-import type { DataWrapper, EChartsDataPoint, LegendMetadata } from 'packages/obsidian/src/ChartData';
-import { collectLegendMetadata, toEChartsDataPoints } from 'packages/obsidian/src/ChartData';
+import type { DataWrapper, LegendMetadata } from 'packages/obsidian/src/ChartData';
 import type { MultiChartMode } from 'packages/obsidian/src/ChartView';
 import { toCompactString } from 'packages/obsidian/src/utils/utils';
-
-export type AxisType = 'value' | 'category' | 'time';
+import {
+	attachDatasetsToSeries,
+	buildCartesianPipeline,
+	type AxisType,
+	type EChartsDatum,
+	type SeriesBlueprint,
+} from 'packages/obsidian/src/echarts/dataPipeline';
 
 interface AxisLabelConfig {
 	formatter?: (value: number | string) => string;
@@ -25,23 +29,10 @@ export interface EChartsOption {
 	grid?: Record<string, unknown>;
 }
 
-export interface EChartsDatum {
-	value: [number | string, number];
-	rawX: number | string | Date;
-	xKey: string;
-	file: string;
-	label?: string;
-	groupIndex: number;
-	chartIndex: number;
-}
-
-export type LegendEntry = LegendMetadata;
-
 export interface ChartOptionResult {
 	option: EChartsOption;
-	legendEntries: LegendEntry[];
-	overrideErrors: string[];
-	overrideParseErrors: string[];
+	legendEntries: LegendMetadata[];
+	errors: string[];
 }
 
 export interface ChartConfigState {
@@ -51,37 +42,8 @@ export interface ChartConfigState {
 	yDomain?: [number | null, number | null];
 	showLabels?: boolean;
 	showPercentages?: boolean;
-	overrides?: Record<string, unknown> | null;
-	overrideParseErrors?: string[];
 	tooltipFormatter?: (datum: EChartsDatum, seriesName: string) => string;
 	labelFormatter?: (datum: EChartsDatum, seriesName: string) => string;
-}
-
-const ALLOWED_ROOT_OVERRIDE_KEYS = new Set([
-	'grid',
-	'legend',
-	'tooltip',
-	'xAxis',
-	'yAxis',
-	'color',
-	'series',
-	'visualMap',
-	'axisPointer',
-	'title',
-	'dataZoom',
-	'toolbox',
-	'textStyle',
-	'backgroundColor',
-]);
-
-const PROTECTED_SERIES_KEYS = new Set(['data', 'type', 'encode', 'datasetIndex', 'id', 'name']);
-const PROTECTED_AXIS_KEYS = new Set(['data']);
-
-interface SeriesBlueprint {
-	groupIndex: number;
-	name: string;
-	color: string;
-	data: EChartsDatum[];
 }
 
 interface CartesianBuildContext {
@@ -93,7 +55,9 @@ interface CartesianBuildContext {
 	processedPoints: EChartsDatum[];
 	seriesBlueprints: SeriesBlueprint[];
 	hasMultipleSeries: boolean;
-	legendEntries: LegendEntry[];
+	legendEntries: LegendMetadata[];
+	datasets: Record<string, unknown>[] | null;
+	validationErrors: string[];
 }
 
 interface CartesianBuildOptions {
@@ -189,36 +153,46 @@ export function buildBarOptions(data: DataWrapper, chartIndex: number, config: C
 
 function buildCartesianOptions(options: CartesianBuildOptions): ChartOptionResult {
 	const { data, chartIndex, config } = options;
-	const rawPoints = toEChartsDataPoints(data, chartIndex);
-	const axisType = detectAxisType(rawPoints);
-	const processedPoints = rawPoints.map(point => toEChartsDatum(point, axisType));
-	const legendEntries = collectLegendMetadata(data);
-	const seriesBlueprints = buildSeriesBlueprints(legendEntries, processedPoints);
-	const hasMultipleSeries = seriesBlueprints.filter(series => series.data.length > 0).length > 1;
+	const pipeline = buildCartesianPipeline(data, chartIndex);
+	const hasMultipleSeries = pipeline.seriesBlueprints.filter(series => series.data.length > 0).length > 1;
 
 	const ctx: CartesianBuildContext = {
 		chartType: options.chartType,
 		data,
 		chartIndex,
 		config,
-		axisType,
-		processedPoints,
-		seriesBlueprints,
+		axisType: pipeline.axisType,
+		processedPoints: pipeline.processedPoints,
+		seriesBlueprints: pipeline.seriesBlueprints,
 		hasMultipleSeries,
-		legendEntries,
+		legendEntries: pipeline.legendEntries,
+		datasets: null,
+		validationErrors: pipeline.validationErrors,
 	};
 
 	options.onBeforeSeriesCreate?.(ctx);
 
 	const baseOption = createBaseOption(ctx);
 
-	const series = seriesBlueprints.map(blueprint => {
+	const datasets = attachDatasetsToSeries(ctx.seriesBlueprints, ctx.axisType, chartIndex).map(dataset => ({
+		id: dataset.id,
+		dimensions: dataset.dimensions,
+		source: dataset.source,
+	}));
+	ctx.datasets = datasets.length > 0 ? datasets : null;
+
+	const series = ctx.seriesBlueprints.map(blueprint => {
 		const optionSeries: Record<string, unknown> = {
 			type: options.chartType,
 			name: blueprint.name,
-			data: blueprint.data.map(datum => ({ ...datum, value: [datum.value[0], datum.value[1]] })),
 			itemStyle: { color: blueprint.color },
+			data: blueprint.data.map(datum => ({ ...datum, value: [datum.value[0], datum.value[1]] })),
 		};
+
+		if (blueprint.datasetId) {
+			optionSeries.datasetId = blueprint.datasetId;
+			optionSeries.encode = { x: 'x', y: 'y' };
+		}
 
 		if (options.chartType === 'line') {
 			optionSeries.symbol = optionSeries.symbol ?? 'circle';
@@ -229,96 +203,18 @@ function buildCartesianOptions(options: CartesianBuildOptions): ChartOptionResul
 	});
 
 	baseOption.series = series;
+	if (ctx.datasets) {
+		baseOption.dataset = ctx.datasets;
+	}
 	options.onOptionFinalize?.(baseOption, ctx);
 
-	const { option, errors } = mergeEChartsOverrides(baseOption, config.overrides);
+	const errors = ctx.validationErrors ?? [];
 
 	return {
-		option,
-		legendEntries,
-		overrideErrors: errors,
-		overrideParseErrors: config.overrideParseErrors ?? [],
+		option: baseOption,
+		legendEntries: ctx.legendEntries,
+		errors,
 	};
-}
-
-function detectAxisType(points: EChartsDataPoint[]): AxisType {
-	let hasDate = false;
-	let hasNumber = false;
-	let hasString = false;
-
-	for (const point of points) {
-		const value = point.rawX;
-		if (value instanceof Date) {
-			hasDate = true;
-			break;
-		}
-		if (typeof value === 'number') {
-			hasNumber = true;
-			continue;
-		}
-		hasString = true;
-	}
-
-	if (hasDate) {
-		return 'time';
-	}
-	if (hasNumber && !hasString) {
-		return 'value';
-	}
-	return 'category';
-}
-
-function toEChartsDatum(point: EChartsDataPoint, axisType: AxisType): EChartsDatum {
-	const rawX = point.rawX;
-	let xValue: number | string;
-
-	if (axisType === 'time') {
-		if (rawX instanceof Date) {
-			xValue = rawX.getTime();
-		} else if (typeof rawX === 'number') {
-			xValue = rawX;
-		} else {
-			const parsed = Date.parse(String(rawX));
-			xValue = Number.isNaN(parsed) ? String(rawX) : parsed;
-		}
-	} else if (axisType === 'value') {
-		if (typeof rawX === 'number') {
-			xValue = rawX;
-		} else {
-			const numeric = Number(rawX);
-			xValue = Number.isFinite(numeric) ? numeric : 0;
-		}
-	} else {
-		xValue = typeof rawX === 'string' ? rawX : String(rawX);
-	}
-
-	return {
-		value: [xValue, point.y],
-		rawX,
-		xKey: point.xKey,
-		file: point.file,
-		label: point.label,
-		groupIndex: point.groupIndex,
-		chartIndex: point.chartIndex,
-	};
-}
-
-function buildSeriesBlueprints(legendEntries: LegendEntry[], processedPoints: EChartsDatum[]): SeriesBlueprint[] {
-	const blueprints = legendEntries.map(entry => ({
-		groupIndex: entry.groupIndex,
-		name: entry.label,
-		color: entry.color,
-		data: [] as EChartsDatum[],
-	}));
-
-	for (const datum of processedPoints) {
-		const blueprint = blueprints[datum.groupIndex];
-		if (blueprint) {
-			blueprint.data.push(datum);
-		}
-	}
-
-	return blueprints;
 }
 
 function createBaseOption(ctx: CartesianBuildContext): EChartsOption {
@@ -356,8 +252,8 @@ function buildTooltip(ctx: CartesianBuildContext): Record<string, unknown> {
 	return {
 		trigger: 'item',
 		formatter: (params: unknown): string => {
-			const typed = params as { seriesName?: string; data?: EChartsDatum; value?: [number | string, number] };
-			const datum = typed.data;
+			const typed = params as { seriesName?: string; data?: unknown; value?: [number | string, number] };
+			const datum = coerceDatumFromEventPayload(typed);
 			if (!datum) {
 				return typed.seriesName ?? '';
 			}
@@ -452,8 +348,8 @@ function convertSeriesToPercentages(seriesBlueprints: SeriesBlueprint[]): void {
 }
 
 function formatLabel(params: unknown, config: ChartConfigState): string {
-	const typed = params as { data?: EChartsDatum; seriesName?: string; value?: [number | string, number] };
-	const datum = typed.data;
+	const typed = params as { data?: unknown; seriesName?: string; value?: [number | string, number] };
+	const datum = coerceDatumFromEventPayload(typed);
 	if (datum && config.labelFormatter) {
 		return config.labelFormatter(datum, typed.seriesName ?? '');
 	}
@@ -474,147 +370,88 @@ function getFirstAxis(axisConfig: EChartsOption['yAxis']): AxisConfig | null {
 	return axisConfig;
 }
 
-export function mergeEChartsOverrides(baseOption: EChartsOption, overrides: Record<string, unknown> | null | undefined): MergeOverrideResult {
-	const merged = deepClone(baseOption);
-	const errors: string[] = [];
-
-	if (!overrides) {
-		return { option: merged, errors };
+export function coerceDatumFromEventPayload(
+	payload: { data?: unknown; value?: [number | string, number] } | undefined,
+): EChartsDatum | undefined {
+	if (!payload) {
+		return undefined;
 	}
-
-	if (!isPlainObject(overrides)) {
-		errors.push('Advanced overrides must be a plain object.');
-		return { option: merged, errors };
+	const fromData = coerceDatum(payload.data);
+	if (fromData) {
+		return fromData;
 	}
-
-	for (const [key, value] of Object.entries(overrides)) {
-		if (!ALLOWED_ROOT_OVERRIDE_KEYS.has(key)) {
-			errors.push(`Override key "${key}" is not allowed.`);
-			continue;
-		}
-		if (key === 'series') {
-			handleSeriesOverride(merged, value, errors);
-			continue;
-		}
-		if (key === 'xAxis' || key === 'yAxis') {
-			handleAxisOverride(merged, key, value, errors);
-			continue;
-		}
-		mergeValue(merged, key, value);
+	if (Array.isArray(payload.value)) {
+		const valueTuple = payload.value as [number | string, number];
+		return {
+			value: valueTuple,
+			rawX: valueTuple[0],
+			xKey: String(valueTuple[0]),
+			file: '',
+			groupIndex: 0,
+			chartIndex: 0,
+		};
 	}
-
-	return { option: merged, errors };
+	return undefined;
 }
 
-function handleSeriesOverride(option: EChartsOption, value: unknown, errors: string[]): void {
-	if (!Array.isArray(value)) {
-		errors.push('`series` override must be an array.');
-		return;
+function coerceDatum(source: unknown): EChartsDatum | undefined {
+	if (!source) {
+		return undefined;
 	}
-	const targetSeries: Record<string, unknown>[] = Array.isArray(option.series) ? option.series : [];
-
-	for (let index = 0; index < value.length; index++) {
-		const entry: unknown = value[index];
-		if (!isPlainObject(entry)) {
-			errors.push(`series[${index}] override must be a plain object.`);
-			continue;
+	if (isEChartsDatum(source)) {
+		return source;
+	}
+	if (typeof source === 'object') {
+		const record = source as {
+			__datum?: unknown;
+			value?: unknown;
+			rawX?: unknown;
+			xKey?: unknown;
+			file?: unknown;
+			label?: unknown;
+			groupIndex?: unknown;
+			chartIndex?: unknown;
+		};
+		if (isEChartsDatum(record.__datum)) {
+			return record.__datum;
 		}
-		const target = targetSeries[index];
-		if (!target) {
-			errors.push(`Cannot override series[${index}] because it does not exist.`);
-			continue;
-		}
-		for (const [prop, propValue] of Object.entries(entry)) {
-			if (PROTECTED_SERIES_KEYS.has(prop)) {
-				errors.push(`Overriding series[${index}].${prop} is not permitted.`);
-				continue;
-			}
-			mergeValue(target, prop, propValue);
+		if (Array.isArray(record.value)) {
+			const tuple = record.value as [number | string, number];
+			const rawXValue = isValidRawX(record.rawX) ? record.rawX : tuple[0];
+			return {
+				value: tuple,
+				rawX: rawXValue,
+				xKey: record.xKey ? String(record.xKey) : String(tuple[0]),
+				file: record.file ? String(record.file) : '',
+				label: record.label !== undefined ? (record.label as string | undefined) : undefined,
+				groupIndex: record.groupIndex !== undefined ? Number(record.groupIndex) : 0,
+				chartIndex: record.chartIndex !== undefined ? Number(record.chartIndex) : 0,
+			};
 		}
 	}
+	return undefined;
 }
 
-function handleAxisOverride(option: EChartsOption, key: 'xAxis' | 'yAxis', value: unknown, errors: string[]): void {
-	const currentAxis = key === 'xAxis' ? option.xAxis : option.yAxis;
-	const axisList: AxisConfig[] = Array.isArray(currentAxis) ? currentAxis : currentAxis ? [currentAxis] : [];
-	const overrideList: unknown[] = Array.isArray(value) ? value : [value];
-
-	for (let index = 0; index < overrideList.length; index++) {
-		const overrideEntry = overrideList[index];
-		if (!isPlainObject(overrideEntry)) {
-			errors.push(`${key}[${index}] override must be a plain object.`);
-			continue;
-		}
-		const target = axisList[index];
-		if (!target) {
-			errors.push(`Cannot override ${key}[${index}] because it does not exist.`);
-			continue;
-		}
-		for (const [prop, propValue] of Object.entries(overrideEntry)) {
-			if (PROTECTED_AXIS_KEYS.has(prop)) {
-				errors.push(`Overriding ${key}[${index}].${prop} is not permitted.`);
-				continue;
-			}
-			mergeValue(target, prop, propValue);
-		}
+function isValidRawX(value: unknown): value is string | number | Date {
+	if (value instanceof Date) {
+		return true;
 	}
-
-	if (Array.isArray(currentAxis)) {
-		if (key === 'xAxis') {
-			option.xAxis = axisList;
-		} else {
-			option.yAxis = axisList;
-		}
-	} else if (axisList[0]) {
-		if (key === 'xAxis') {
-			option.xAxis = axisList[0];
-		} else {
-			option.yAxis = axisList[0];
-		}
-	}
+	return typeof value === 'string' || typeof value === 'number';
 }
 
-function mergeValue(target: Record<string, unknown>, key: string, value: unknown): void {
-	const existing = target[key];
-	if (isPlainObject(existing) && isPlainObject(value)) {
-		const merged: Record<string, unknown> = { ...existing };
-		for (const [childKey, childValue] of Object.entries(value)) {
-			mergeValue(merged, childKey, childValue);
-		}
-		target[key] = merged;
-		return;
+function isEChartsDatum(value: unknown): value is EChartsDatum {
+	if (!value || typeof value !== 'object') {
+		return false;
 	}
-	if (isUnknownArray(existing) && isUnknownArray(value)) {
-		const clonedArray = value.map(entry => (isPlainObject(entry) ? deepClone(entry) : entry));
-		target[key] = clonedArray;
-		return;
-	}
-	target[key] = deepClone(value);
-}
-
-function deepClone<T>(value: T): T {
-	if (typeof structuredClone === 'function') {
-		try {
-			return structuredClone(value);
-		} catch {
-			// structuredClone cannot handle functions; fall through to manual clone.
-		}
-	}
-	return cloneShallow(value) as T;
-}
-
-function cloneShallow(value: unknown): unknown {
-	if (Array.isArray(value)) {
-		return value.map(item => cloneShallow(item));
-	}
-	if (isPlainObject(value)) {
-		const clone: Record<string, unknown> = {};
-		for (const [key, child] of Object.entries(value)) {
-			clone[key] = cloneShallow(child);
-		}
-		return clone;
-	}
-	return value;
+	const candidate = value as Partial<EChartsDatum>;
+	return (
+		Array.isArray(candidate.value) &&
+		candidate.value.length === 2 &&
+		typeof candidate.xKey === 'string' &&
+		typeof candidate.file === 'string' &&
+		typeof candidate.groupIndex === 'number' &&
+		typeof candidate.chartIndex === 'number'
+	);
 }
 
 function ensureAxisLabel(target: AxisConfig): AxisLabelConfig {
@@ -625,18 +462,4 @@ function ensureAxisLabel(target: AxisConfig): AxisLabelConfig {
 	const next: AxisLabelConfig = {};
 	target.axisLabel = next;
 	return next;
-}
-
-function isUnknownArray(value: unknown): value is unknown[] {
-	return Array.isArray(value);
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-	if (value == null) {
-		return false;
-	}
-	if (typeof value !== 'object') {
-		return false;
-	}
-	return Object.getPrototypeOf(value) === Object.prototype;
 }

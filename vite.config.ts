@@ -6,6 +6,9 @@ import path from 'path';
 import builtins from 'builtin-modules';
 import { getBuildBanner } from './automation/build/buildBanner';
 
+// Rollup's native binary is optional; skip loading it so bun installs remain stable.
+process.env.ROLLUP_SKIP_NODEJS_NATIVE ??= '1';
+
 const entryFile = 'packages/obsidian/src/main.ts';
 
 export default defineConfig(async ({ mode }) => {
@@ -23,7 +26,7 @@ export default defineConfig(async ({ mode }) => {
 			targets: [
 				{
 					src: 'manifest.json',
-					dest: outDir,
+					dest: '.',
 				},
 			],
 		}),
@@ -34,6 +37,10 @@ export default defineConfig(async ({ mode }) => {
 		resolve: {
 			alias: {
 				packages: path.resolve(__dirname, './packages'),
+				'@ticatec/uniface-echarts/ChartPanel.svelte': path.resolve(
+					__dirname,
+					'./node_modules/@ticatec/uniface-echarts/dist/ChartPanel.svelte',
+				),
 			},
 		},
 		build: {
@@ -47,7 +54,7 @@ export default defineConfig(async ({ mode }) => {
 			sourcemap: prod ? false : 'inline',
 			cssCodeSplit: false,
 			emptyOutDir: false,
-			outDir: '',
+			outDir: outDir,
 			rollupOptions: {
 				input: {
 					main: resolve(__dirname, entryFile),

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { ChartOptionResult } from '../echarts/options';
+import type { ChartOptionResult } from '../echarts/options';
+import type { ConfigStackState } from './config-stack/types';
 	import { collectLegendMetadata, type DataWrapper, type LegendMetadata } from '../ChartData';
 	import type { ChartView } from '../ChartView';
 	import PlotGridItem from './PlotGridItem.svelte';
@@ -10,7 +11,9 @@
 		chartIndex: number;
 	}
 
-	interface BuildOptionResult extends Pick<ChartOptionResult, 'option' | 'overrideErrors'> {}
+interface BuildOptionResult extends Pick<ChartOptionResult, 'option' | 'errors'> {
+	defaultStackState: ConfigStackState;
+}
 
 	interface Props {
 		view: ChartView;
@@ -19,7 +22,7 @@
 		globalErrors?: string[];
 	}
 
-	let { view, xAxisLabel, buildOption, globalErrors = [] }: Props = $props();
+let { view, xAxisLabel, buildOption, globalErrors = [] }: Props = $props();
 
 	let data: DataWrapper | null = $state(null) as DataWrapper | null;
 	let legendEntries: LegendMetadata[] = $derived(data ? collectLegendMetadata(data) : []);
@@ -62,15 +65,21 @@
 <div class="bases-charts-plot-grid">
 	{#if data}
 		{#if data.getChartIdentifiers().length > 0}
-			{#each data.getChartIdentifiers() as _, chartIndex}
-				{@const result = buildOption({ data, chartIndex })}
-				<PlotGridItem
-					view={view}
-					chartName={data.getChartName(chartIndex)}
-					xAxisLabel={xLabel}
-					option={result.option}
-					overrideErrors={result.overrideErrors}
-				></PlotGridItem>
+	{#each data.getChartIdentifiers() as _, chartIndex}
+		{@const chartName = data.getChartName(chartIndex)}
+		{@const chartIdentifier = view.getChartIdentifier(chartIndex, chartName)}
+		{@const result = buildOption({ data, chartIndex })}
+		{@const storedState = view.getConfigStackState(chartIdentifier)}
+		{@const stackState = storedState ?? result.defaultStackState}
+		<PlotGridItem
+			view={view}
+			chartName={chartName}
+			xAxisLabel={xLabel}
+			option={result.option}
+			errors={result.errors}
+			chartIdentifier={chartIdentifier}
+			stackState={stackState}
+		></PlotGridItem>
 			{/each}
 		{:else}
 			<p>No properties selected</p>

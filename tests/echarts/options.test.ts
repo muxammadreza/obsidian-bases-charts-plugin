@@ -17,7 +17,7 @@ mock.module('packages/obsidian/src/ChartView', () => {
 		MIN_Y_OVERRIDE: 'min-y-override',
 		MAX_Y_OVERRIDE: 'max-y-override',
 		LABEL_PROP: 'label-property',
-		ECHARTS_OVERRIDES: 'echarts-options-override',
+		CONFIG_STACK_STATE: 'config-stack-state',
 	} as const;
 
 	class ChartView {}
@@ -32,17 +32,14 @@ mock.module('packages/obsidian/src/ChartView', () => {
 await import('../obsidianMock');
 
 const { GroupSeparatedData } = await import('packages/obsidian/src/ChartData');
-const { buildScatterOptions, buildLineOptions, buildBarOptions, mergeEChartsOverrides } = await import('packages/obsidian/src/echarts/options');
+const { buildScatterOptions, buildLineOptions, buildBarOptions } = await import('packages/obsidian/src/echarts/options');
 const { buildChartConfig } = await import('packages/obsidian/src/echarts/config');
 const { CHART_SETTINGS, MultiChartMode } = await import('packages/obsidian/src/ChartView');
-
-type OverrideState = { overrides: Record<string, unknown> | null; errors: string[] };
 
 function createViewStub(
 	options: {
 		configValues?: Record<string, unknown>;
 		yDomain?: { min: number | null; max: number | null; synced: boolean };
-		overrides?: OverrideState;
 		properties?: string[];
 		displayNames?: Record<string, string>;
 	} = {},
@@ -67,7 +64,6 @@ function createViewStub(
 			properties,
 		},
 		getYDomainOverrides: () => options.yDomain ?? { min: null, max: null, synced: false },
-		getAdvancedOverrides: () => options.overrides ?? { overrides: null, errors: [] },
 	} as unknown as import('packages/obsidian/src/ChartView').ChartView;
 
 	return view;
@@ -147,18 +143,15 @@ describe('ECharts option builders', () => {
 	});
 });
 
-describe('mergeEChartsOverrides', () => {
-	test('rejects unsafe series overrides', () => {
-		const base = { series: [{ type: 'line', data: [1, 2, 3] }] };
-		const { option, errors } = mergeEChartsOverrides(base, {
-			series: [{ data: [5, 6, 7] }],
-		});
-		expect(option.series?.[0]).toMatchObject({ data: [1, 2, 3] });
-		expect(errors[0]).toContain('series[0].data');
-	});
-
-	test('returns error when overrides is not an object', () => {
-		const { errors } = mergeEChartsOverrides({ title: {} }, 'oops' as unknown as Record<string, unknown>);
-		expect(errors).toContain('Advanced overrides must be a plain object.');
+describe('option builder validation errors', () => {
+	test('returns pipeline errors for invalid numeric data', () => {
+		const view = createViewStub();
+		const processed = [
+			{ x: 1, y: Number.NaN, groupIndex: 0, chartIndex: 0, file: 'notes/a.md' },
+		];
+		const wrapper = new GroupSeparatedData(view, processed, ['Only']);
+		const config = buildChartConfig(view, { chartType: 'scatter' });
+		const result = buildScatterOptions(wrapper, 0, config);
+		expect(result.errors.length).toBeGreaterThan(0);
 	});
 });

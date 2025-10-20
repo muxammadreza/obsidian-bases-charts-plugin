@@ -9,6 +9,7 @@ mock.module('packages/obsidian/src/charts/EChartsPlot.svelte', () => import('../
 await import('../obsidianMock');
 
 const { default: PlotGridItem } = await import('packages/obsidian/src/charts/PlotGridItem.svelte');
+const { createEmptyConfigStackState } = await import('packages/obsidian/src/charts/config-stack/state');
 
 describe('PlotGridItem', () => {
 	test('invokes view.openFile when a point is clicked', async () => {
@@ -55,8 +56,10 @@ describe('PlotGridItem', () => {
 				chartName: 'Chart A',
 				xAxisLabel: 'Prop X →',
 				option,
-				overrideErrors: [],
+				errors: [],
 				forceRender: true,
+				chartIdentifier: 'chart-a',
+				stackState: createEmptyConfigStackState(),
 			},
 		});
 

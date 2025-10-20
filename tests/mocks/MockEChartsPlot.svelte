@@ -1,5 +1,6 @@
 <script lang="ts">
-	import type { EChartsDatum, EChartsOption } from 'packages/obsidian/src/echarts/options';
+	import type { EChartsDatum } from 'packages/obsidian/src/echarts/dataPipeline';
+	import type { EChartsOption } from 'packages/obsidian/src/echarts/options';
 
 	let { option, width, height, chartName, xAxisLabel, onDataPointClick } = $props<{
 		option: EChartsOption;
@@ -21,6 +22,10 @@
 		}
 		const data = Array.isArray(series.data) ? series.data[0] : undefined;
 		return data as EChartsDatum | undefined;
+	});
+
+	$effect(() => {
+		(globalThis as { __mockLatestOption?: EChartsOption }).__mockLatestOption = option;
 	});
 
 	function triggerClick(newTab: boolean): void {

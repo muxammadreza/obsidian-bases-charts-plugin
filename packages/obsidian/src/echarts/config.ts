@@ -12,7 +12,6 @@ export function buildChartConfig(view: ChartView, options: ChartConfigOptions): 
 	const xAxisLabel = resolveXAxisLabel(view);
 	const yAxisLabelBase = '↑';
 	const multiChartMode = resolveMultiChartMode(view);
-	const { overrides, errors: overrideParseErrors } = view.getAdvancedOverrides();
 	const yDomainOverrides = view.getYDomainOverrides();
 
 	const showLabels = options.chartType === 'bar' ? resolveBooleanSetting(view, CHART_SETTINGS.SHOW_LABELS, true) : undefined;
@@ -25,8 +24,6 @@ export function buildChartConfig(view: ChartView, options: ChartConfigOptions): 
 		yDomain: [yDomainOverrides.min, yDomainOverrides.max],
 		showLabels,
 		showPercentages,
-		overrides: overrides ?? null,
-		overrideParseErrors,
 	};
 }
 

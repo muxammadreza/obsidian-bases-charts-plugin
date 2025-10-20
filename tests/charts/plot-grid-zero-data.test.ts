@@ -4,10 +4,11 @@ import '../svelteLoader';
 import { describe, expect, test, mock } from 'bun:test';
 
 const { default: PlotGrid } = await import('packages/obsidian/src/charts/PlotGrid.svelte');
+const { createEmptyConfigStackState } = await import('packages/obsidian/src/charts/config-stack/state');
 
 describe('PlotGrid zero-data handling', () => {
 	test('skips option builder when no plottable data', async () => {
-		const buildOption = mock(() => ({ option: {}, overrideErrors: [] }));
+	const buildOption = mock(() => ({ option: {}, errors: [], defaultStackState: createEmptyConfigStackState() }));
 		const view = {
 			processData: () =>
 				({
@@ -19,6 +20,8 @@ describe('PlotGrid zero-data handling', () => {
 					getColorFromGroupIndex: () => '',
 					getGroupName: () => '',
 				}) as unknown,
+			getChartIdentifier: (index: number) => `chart-${index}`,
+			getConfigStackState: () => null,
 			events: {
 				on: () => {},
 				off: () => {},
@@ -37,7 +40,7 @@ describe('PlotGrid zero-data handling', () => {
 			},
 		});
 
-		expect(target.textContent).toContain('No data to display');
+		expect(target.textContent).toContain('No properties selected');
 		expect(buildOption).not.toHaveBeenCalled();
 
 		component.$destroy();

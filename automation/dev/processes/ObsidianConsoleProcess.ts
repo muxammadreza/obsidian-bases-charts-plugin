@@ -1,3 +1,4 @@
+/// <reference path="./chrome-remote-interface.d.ts" />
 import { EventEmitter } from 'events';
 import type { Subprocess } from 'bun';
 import { CMD_FMT } from '../../utils/shellUtils';
@@ -60,12 +61,19 @@ export interface RuntimeExceptionThrownEvent {
 	message: string;
 	exceptionDetails: {
 		text?: string;
-	texception?: { description?: string; value?: unknown } | null;
-	stackTrace?: { callFrames?: Array<{ functionName: string; url: string; lineNumber: number; columnNumber: number }> } | null;
-	url?: string;
-	lineNumber?: number;
-	columnNumber?: number;
-	 timestamp?: number;
+		exception?: { description?: string; value?: unknown } | null;
+		stackTrace?: {
+			callFrames?: Array<{
+				functionName: string;
+				url: string;
+				lineNumber: number;
+				columnNumber: number;
+			}>;
+		} | null;
+		url?: string;
+		lineNumber?: number;
+		columnNumber?: number;
+		timestamp?: number;
 	};
 }
 
@@ -95,6 +103,12 @@ export interface ObsidianConsoleProcessOptions {
 		warn(message: string): void;
 		error(message: string): void;
 	};
+}
+
+function isRuntimeExceptionEvent(
+	payload: ConsoleAPICalledEvent | RuntimeExceptionThrownEvent,
+): payload is RuntimeExceptionThrownEvent {
+	return (payload as RuntimeExceptionThrownEvent).exceptionDetails !== undefined;
 }
 
 function getDefaultLaunchCommand(): string[] {
@@ -139,9 +153,8 @@ export class ObsidianConsoleProcess implements LifecycleParticipant {
 
 	private process: SpawnedProcess | null = null;
 	private client: CDPClient | null = null;
-	private runtimeHandler?: (payload: ConsoleAPICalledEvent) => void;
+	private runtimeHandler?: (payload: ConsoleAPICalledEvent | RuntimeExceptionThrownEvent) => void;
 	private logHandler?: (payload: LogEntryAddedEvent) => void;
-	private exceptionHandler?: (payload: RuntimeExceptionThrownEvent) => void;
 	private disconnectHandler?: () => void;
 	private stopping = false;
 	private reconnecting = false;
@@ -286,10 +299,10 @@ export class ObsidianConsoleProcess implements LifecycleParticipant {
 		await client.Log.enable();
 
 		this.runtimeHandler = payload => {
-			if ((payload as RuntimeExceptionThrownEvent).exceptionDetails !== undefined) {
-				this.handleExceptionEvent(payload as RuntimeExceptionThrownEvent);
+			if (isRuntimeExceptionEvent(payload)) {
+				this.handleExceptionEvent(payload);
 			} else {
-				this.handleConsoleEvent(payload as ConsoleAPICalledEvent);
+				this.handleConsoleEvent(payload);
 			}
 		};
 		this.logHandler = payload => this.handleLogEntry(payload);
@@ -342,12 +355,13 @@ export class ObsidianConsoleProcess implements LifecycleParticipant {
 	}
 
 	private handleExceptionEvent(event: RuntimeExceptionThrownEvent): void {
-		const timestamp = this.normalizeTimestamp(event.exceptionDetails.timestamp);
+		const details = event.exceptionDetails;
+		const timestamp = this.normalizeTimestamp(details.timestamp);
 		const detailText =
-			event.exceptionDetails.text ??
-			event.exceptionDetails.exception?.description ??
-			this.stringifyValue(event.exceptionDetails.exception?.value ?? event.message);
-		const stackFrames = event.exceptionDetails.stackTrace?.callFrames ?? [];
+			details.text ??
+			details.exception?.description ??
+			this.stringifyValue(details.exception?.value ?? event.message);
+		const stackFrames = details.stackTrace?.callFrames ?? [];
 		const prettyStack = stackFrames
 			.map(frame => `${frame.functionName || '(anonymous)'} (${frame.url}:${frame.lineNumber + 1}:${frame.columnNumber + 1})`)
 			.join('\n');

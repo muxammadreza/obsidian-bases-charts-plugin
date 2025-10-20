@@ -52,11 +52,13 @@ export class StreamMultiplexer {
 	private readonly bufferSize: number;
 	private readonly batchInterval: number;
 	private server?: Server<SocketData>;
+	private serverPort: number | null = null;
+	private serverHostname: string | null = null;
 	private readonly sockets = new Set<ServerWebSocket<SocketData>>();
-private pendingBatch: StreamEvent[] = [];
-private batchTimer: ReturnType<typeof setTimeout> | undefined;
-private trackerSnapshotProvider?: () => RuntimeDebugState;
-private commandHandler?: CommandHandler;
+	private pendingBatch: StreamEvent[] = [];
+	private batchTimer: ReturnType<typeof setTimeout> | undefined;
+	private trackerSnapshotProvider?: () => RuntimeDebugState;
+	private commandHandler?: CommandHandler;
 
 	constructor(options: StreamMultiplexerOptions = {}) {
 		this.bufferSize = Math.max(1, options.bufferSize ?? DEFAULT_BUFFER_SIZE);
@@ -110,8 +112,8 @@ private commandHandler?: CommandHandler;
 	public startWebSocketServer(options: { port?: number; hostname?: string } = {}): WebSocketServerHandle {
 		if (this.server) {
 			return {
-				port: this.server.port,
-				hostname: this.server.hostname,
+				port: this.serverPort ?? DEFAULT_STREAM_PORT,
+				hostname: this.serverHostname ?? DEFAULT_STREAM_HOST,
 				close: () => this.shutdownWebSocketServer(),
 			};
 		}
@@ -173,10 +175,12 @@ private commandHandler?: CommandHandler;
 					headers: { 'content-type': 'text/plain' },
 				}),
 		});
+		this.serverPort = this.server.port ?? port;
+		this.serverHostname = this.server.hostname ?? hostname;
 
 		return {
-			port: this.server.port,
-			hostname: this.server.hostname,
+			port: this.serverPort ?? port,
+			hostname: this.serverHostname ?? hostname,
 			close: () => this.shutdownWebSocketServer(),
 		};
 	}
@@ -332,6 +336,8 @@ private commandHandler?: CommandHandler;
 			await this.server.stop();
 			this.server = undefined;
 		}
+		this.serverPort = null;
+		this.serverHostname = null;
 	}
 
 	private sendToSockets(payload: string): void {

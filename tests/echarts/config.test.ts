@@ -15,7 +15,7 @@ mock.module('packages/obsidian/src/ChartView', () => {
 		MIN_Y_OVERRIDE: 'min-y-override',
 		MAX_Y_OVERRIDE: 'max-y-override',
 		LABEL_PROP: 'label-property',
-		ECHARTS_OVERRIDES: 'echarts-options-override',
+		CONFIG_STACK_STATE: 'config-stack-state',
 	} as const;
 
 	class ChartView {}
@@ -31,13 +31,10 @@ import type { ChartConfigState } from 'packages/obsidian/src/echarts/options';
 import type { ChartKind } from 'packages/obsidian/src/echarts/config';
 import type { ChartView, YDomainOverrides } from 'packages/obsidian/src/ChartView';
 
-type OverrideState = { overrides: Record<string, unknown> | null; errors: string[] };
-
 function createViewStub(
 	options: {
 		configValues?: Record<string, unknown>;
 		yDomain?: YDomainOverrides;
-		overrides?: OverrideState;
 		properties?: string[];
 		displayNames?: Record<string, string>;
 	} = {},
@@ -62,7 +59,6 @@ function createViewStub(
 			properties,
 		},
 		getYDomainOverrides: () => options.yDomain ?? { min: null, max: null, synced: false },
-		getAdvancedOverrides: () => options.overrides ?? { overrides: null, errors: [] },
 	} as unknown as ChartView;
 
 	return view;
@@ -118,15 +114,14 @@ await import('../obsidianMock');
 
 describe('buildChartConfig', () => {
 	test('produces bar configuration with toggles and overrides', () => {
-		const view = createViewStub({
-			configValues: {
-				[CHART_SETTINGS.SHOW_LABELS]: false,
-				[CHART_SETTINGS.SHOW_PERCENTAGES]: true,
-			},
-			yDomain: { min: 0, max: 42, synced: true },
-			overrides: { overrides: { tooltip: { confine: true } }, errors: [] },
-			displayNames: { propX: 'Prop X' },
-		});
+	const view = createViewStub({
+		configValues: {
+			[CHART_SETTINGS.SHOW_LABELS]: false,
+			[CHART_SETTINGS.SHOW_PERCENTAGES]: true,
+		},
+		yDomain: { min: 0, max: 42, synced: true },
+		displayNames: { propX: 'Prop X' },
+	});
 
 		const chartType: ChartKind = 'bar';
 		const config = buildChartConfig(view, { chartType });
@@ -137,19 +132,15 @@ describe('buildChartConfig', () => {
 		expect(config.yDomain).toEqual([0, 42]);
 		expect(config.showLabels).toBe(false);
 		expect(config.showPercentages).toBe(true);
-		expect(config.overrides).toEqual({ tooltip: { confine: true } });
-		expect(config.overrideParseErrors).toEqual([]);
 	});
 
-	test('falls back to default modes and surfaces parse errors', () => {
+	test('falls back to default multi-chart mode on invalid values', () => {
 		const view = createViewStub({
 			configValues: { [CHART_SETTINGS.MULTI_CHART]: 'invalid-mode' },
-			overrides: { overrides: null, errors: ['Invalid JSON'] },
 		});
 
 		const config = buildChartConfig(view, { chartType: 'scatter' });
 		expect(config.multiChartMode).toBe(MultiChartMode.PROPERTY);
-		expect(config.overrideParseErrors).toEqual(['Invalid JSON']);
 	});
 });
 
@@ -167,19 +158,17 @@ describe('option builders', () => {
 		const view = createViewStub();
 		const wrapper: DataWrapper = new GroupSeparatedData(view, processed, ['Only Group']);
 
-		const config: ChartConfigState = {
-			xAxisLabel: 'Prop X →',
-			yAxisLabelBase: '↑',
-			multiChartMode: MultiChartMode.PROPERTY,
-			yDomain: [null, null],
-			showLabels: true,
-			showPercentages: false,
-			overrides: null,
-			overrideParseErrors: ['Invalid JSON'],
-		};
+	const config: ChartConfigState = {
+		xAxisLabel: 'Prop X →',
+		yAxisLabelBase: '↑',
+		multiChartMode: MultiChartMode.PROPERTY,
+		yDomain: [null, null],
+		showLabels: true,
+		showPercentages: false,
+	};
 
-		const result = buildBarOptions(wrapper, 0, config);
-		expect(result.legendEntries).toHaveLength(1);
-		expect(result.overrideParseErrors).toEqual(['Invalid JSON']);
-	});
+	const result = buildBarOptions(wrapper, 0, config);
+	expect(result.legendEntries).toHaveLength(1);
+	expect(result.errors).toEqual([]);
+});
 });

@@ -23,7 +23,7 @@ export interface RuntimeDebugOrchestratorOptions {
 export class RuntimeDebugOrchestrator {
 	private readonly participants: LifecycleParticipant[];
 	private readonly steeringEmitter: SteeringDirectiveEmitter;
-	private readonly logger: Required<RuntimeDebugOrchestratorOptions['logger']>;
+	private readonly logger: Required<NonNullable<RuntimeDebugOrchestratorOptions['logger']>>;
 	private readonly readinessMessage: string;
 	private running = false;
 	private shuttingDown = false;
@@ -35,11 +35,12 @@ export class RuntimeDebugOrchestrator {
 
 		this.participants = [...options.participants];
 		this.steeringEmitter = options.steeringEmitter;
-		this.logger = options.logger ?? {
-			info: console.log,
-			warn: console.warn,
-			error: console.error,
-		};
+		this.logger =
+			options.logger ?? {
+				info: console.log,
+				warn: console.warn,
+				error: console.error,
+			};
 		this.readinessMessage =
 			options.readinessMessage ?? 'Runtime debugging orchestrator is ready.';
 	}

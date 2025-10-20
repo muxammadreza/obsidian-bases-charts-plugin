@@ -53,7 +53,7 @@ describe('RuntimeErrorTracker', () => {
 					status: 'state',
 					timestamp: Date.now(),
 					severity: 'info',
-					metadata: event.snapshot,
+					metadata: { snapshot: event.snapshot },
 				});
 			}
 		});

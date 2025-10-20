@@ -4,7 +4,7 @@ import { DevWatcherProcess, type DevWatcherEvent } from '../../automation/dev/pr
 const encoder = new TextEncoder();
 
 class FakeStream {
-	private readonly controller: ReadableStreamDefaultController<Uint8Array>;
+	private controller: ReadableStreamDefaultController<Uint8Array> | null = null;
 	public readonly stream: ReadableStream<Uint8Array>;
 
 	constructor() {
@@ -16,11 +16,18 @@ class FakeStream {
 	}
 
 	public push(line: string): void {
-		this.controller.enqueue(encoder.encode(line));
+		this.getController().enqueue(encoder.encode(line));
 	}
 
 	public close(): void {
-		this.controller.close();
+		this.controller?.close();
+	}
+
+	private getController(): ReadableStreamDefaultController<Uint8Array> {
+		if (!this.controller) {
+			throw new Error('Stream controller not initialized');
+		}
+		return this.controller;
 	}
 }
 

@@ -8,6 +8,12 @@ import {
 	type RuntimeExceptionThrownEvent,
 } from '../../automation/dev/processes/ObsidianConsoleProcess';
 
+function isRuntimeStatusEvent(
+	event: ObsidianConsoleEvent,
+): event is Extract<ObsidianConsoleEvent, { type: 'runtime-status' }> {
+	return event.type === 'runtime-status';
+}
+
 class FakeDomain<TEvent extends string, TPayload> {
 	public enabled = false;
 	private handlers = new Map<TEvent, Set<(payload: TPayload) => void>>();
@@ -232,11 +238,11 @@ describe('ObsidianConsoleProcess', () => {
 
 		expect(connect).toHaveBeenCalledTimes(2);
 		expect(focusCommand.mock.calls.length).toBeGreaterThanOrEqual(2);
-		const attachedEvents = events.filter(
-			event => event.type === 'runtime-status' && event.status === 'attached',
-		);
+		const attachedEvents = events
+			.filter(isRuntimeStatusEvent)
+			.filter(event => event.status === 'attached');
 		expect(attachedEvents.length).toBeGreaterThanOrEqual(2);
-		const reconnectDetail = attachedEvents[attachedEvents.length - 1]?.detail;
+		const reconnectDetail = attachedEvents.at(-1)?.detail;
 		expect(reconnectDetail).toBe('reconnected');
 	});
 

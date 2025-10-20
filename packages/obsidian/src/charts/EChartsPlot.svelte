@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { Chart as SvelteECharts } from 'svelte-echarts';
-	import * as echarts from 'echarts';
-	import type { EChartsInitOpts } from 'echarts';
-	import type { EChartsDatum, EChartsOption } from '../echarts/options';
-	import { ensureEChartsTheme } from '../echarts/theme';
+	import ChartPanel from '@ticatec/uniface-echarts/ChartPanel.svelte';
+	import type ChartEventParams from '@ticatec/uniface-echarts/dist/ChartEventParams';
+	import type { EChartsOption } from '../echarts/options';
+	import { coerceDatumFromEventPayload } from '../echarts/options';
+	import type { EChartsDatum } from '../echarts/dataPipeline';
+	import { createChartInstance } from '../echarts/runtime';
 
 	interface Props {
 		option: EChartsOption;
@@ -16,11 +17,11 @@
 		onRenderError?: (message: string) => void;
 	}
 
-	let { option, width, height, chartName, xAxisLabel, onDataPointClick, onDataPointHover, onRenderError }: Props = $props();
+	let { option, width, height, chartName, xAxisLabel, onDataPointClick, onDataPointHover, onRenderError }: Props =
+		$props();
 
-	let chartInstance: echarts.EChartsType | null = $state(null);
 	let renderError: string | null = $state(null);
-	const themeName = ensureEChartsTheme();
+let runtime = $state(createChartInstance({ initialOption: option, onError: handleRuntimeError }));
 
 	function reportError(error: unknown): void {
 		const message = error instanceof Error ? error.message : 'Unknown rendering error.';
@@ -28,65 +29,48 @@
 		onRenderError?.(message);
 	}
 
-	function initWithTheme(element: HTMLDivElement, _theme?: string, initOptions?: EChartsInitOpts): echarts.EChartsType {
-		try {
-			const instance = echarts.init(element, themeName, initOptions);
-			renderError = null;
-			return instance;
-		} catch (error) {
-			reportError(error);
-			return createFallbackInstance();
-		}
-	}
-
-	function createFallbackInstance(): echarts.EChartsType {
-		const noop = (): void => {};
-		return {
-			setOption: noop,
-			dispose: noop,
-			resize: noop,
-			on: noop as unknown as echarts.EChartsType['on'],
-			off: noop as unknown as echarts.EChartsType['off'],
-			once: noop as unknown as echarts.EChartsType['once'],
-			disableDataZoom: noop,
-			enableDataZoom: noop,
-			disableSilentDownplay: noop,
-			enableLarge: noop,
-			enableLightAnimation: noop,
-			disableGraphicLarge: noop,
-			disableLargeBrush: noop,
-			enableParallel: noop,
-			enable: noop,
-			disable: noop,
-		} as unknown as echarts.EChartsType;
-	}
-
 	$effect(() => {
-		if (chartInstance) {
-			try {
-				renderError = null;
-				chartInstance.setOption(option, { notMerge: true, lazyUpdate: false });
-			} catch (error) {
-				reportError(error);
-			}
+		if (!runtime) {
+			return;
 		}
+		renderError = null;
+		runtime.setOption(option);
 	});
 
-	function handleClick(event: unknown): void {
-		const datum = (event as { data?: EChartsDatum }).data;
+	$effect(() => {
+		runtime.setEvents({
+			onClick: handleClick,
+			onMouseOver: handleMouseOver,
+			onMouseOut: handleMouseOut,
+		});
+	});
+
+	function handleRuntimeError(message: string, error: unknown): void {
+		const actualMessage = error instanceof Error ? error.message : message;
+		renderError = actualMessage;
+		onRenderError?.(actualMessage);
+		console.error(actualMessage, error);
+	}
+
+	function handleClick(event: ChartEventParams): void {
+		const datum = coerceDatumFromEventPayload(event);
 		if (datum) {
 			onDataPointClick?.(datum, event);
 		}
 	}
 
-	function handleMouseOver(event: unknown): void {
-		const datum = (event as { data?: EChartsDatum }).data ?? null;
+	function handleMouseOver(event: ChartEventParams): void {
+		const datum = coerceDatumFromEventPayload(event) ?? null;
 		onDataPointHover?.(datum, event);
 	}
 
-	function handleMouseOut(event: unknown): void {
+	function handleMouseOut(event: ChartEventParams): void {
 		onDataPointHover?.(null, event);
 	}
+
+	$effect(() => () => {
+		runtime.dispose();
+	});
 </script>
 
 <div class="echarts-plot" style={`width: ${width}px; height: ${height}px;`}>
@@ -96,17 +80,10 @@
 			<p class="echarts-error-message">{renderError}</p>
 		</div>
 	{:else}
-		<SvelteECharts
-			bind:chart={chartInstance}
-			init={initWithTheme}
-			notMerge={true}
-			options={option}
-			theme={themeName}
-			onClick={handleClick}
-			onMouseover={handleMouseOver}
-			onMouseout={handleMouseOut}
+		<ChartPanel
+			chart={runtime.chart}
 			aria-label={`ECharts plot for ${chartName} with X axis ${xAxisLabel}`}
-		></SvelteECharts>
+		/>
 	{/if}
 </div>
 

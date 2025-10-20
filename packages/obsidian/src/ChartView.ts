@@ -8,6 +8,11 @@ import LinePlot from 'packages/obsidian/src/charts/LinePlot.svelte';
 import ScatterPlot from 'packages/obsidian/src/charts/ScatterPlot.svelte';
 import { parseValueAsNumber, parseValueAsX } from 'packages/obsidian/src/utils/utils';
 import { mount, unmount } from 'svelte';
+import type {
+	ConfigStackApplyDetail,
+	ConfigStackRevertDetail,
+	ConfigStackState,
+} from 'packages/obsidian/src/charts/config-stack/types';
 
 export const SCATTER_CHART_VIEW_TYPE = 'chart-scatter';
 export const LINE_CHART_VIEW_TYPE = 'chart-line';
@@ -24,7 +29,7 @@ export const CHART_SETTINGS = {
 	MIN_Y_OVERRIDE: 'min-y-override',
 	MAX_Y_OVERRIDE: 'max-y-override',
 	LABEL_PROP: 'label-property',
-	ECHARTS_OVERRIDES: 'echarts-options-override',
+	CONFIG_STACK_STATE: 'config-stack-state',
 } as const;
 
 export enum MultiChartMode {
@@ -36,11 +41,6 @@ export interface YDomainOverrides {
 	min: number | null;
 	max: number | null;
 	synced: boolean;
-}
-
-export interface AdvancedOverridesResult {
-	overrides: Record<string, unknown> | null;
-	errors: string[];
 }
 
 function parseConfigAsNumber(value: unknown): number | null {
@@ -64,6 +64,7 @@ export class ChartView extends BasesView {
 	readonly scrollEl: HTMLElement;
 	readonly events: Events;
 	svelteComponent: ReturnType<typeof ScatterPlot> | null = null;
+	private configStackStateCache: Record<string, ConfigStackState> | null = null;
 
 	constructor(type: ChartViewType, controller: QueryController, scrollEl: HTMLElement) {
 		super(controller);
@@ -97,7 +98,18 @@ export class ChartView extends BasesView {
 				},
 			});
 		}
-	}
+
+		const applyRef = this.events.on('config-stack:apply', this.handleConfigStackApply);
+		const revertRef = this.events.on('config-stack:revert', this.handleConfigStackRevert);
+		if (typeof (this as { registerEvent?: (ref: unknown) => void }).registerEvent === 'function') {
+			if (applyRef) {
+				this.registerEvent(applyRef);
+			}
+			if (revertRef) {
+				this.registerEvent(revertRef);
+			}
+		}
+ 	}
 
 	onunload(): void {
 		if (this.svelteComponent) {
@@ -108,6 +120,77 @@ export class ChartView extends BasesView {
 	onDataUpdated(): void {
 		this.events.trigger('data-updated');
 	}
+
+	getChartIdentifier(chartIndex: number, chartName: string): string {
+		return `${this.type}:${chartIndex}:${chartName}`;
+	}
+
+	getConfigStackState(chartId: string): ConfigStackState | null {
+		const store = this.ensureConfigStackStore();
+		const state = store[chartId];
+		return state ? cloneStackState(state) : null;
+	}
+
+	private ensureConfigStackStore(): Record<string, ConfigStackState> {
+		if (this.configStackStateCache) {
+			return this.configStackStateCache;
+		}
+
+		const store: Record<string, ConfigStackState> = {};
+		const config = this.config;
+		if (config) {
+			const raw = config.get(CHART_SETTINGS.CONFIG_STACK_STATE);
+			if (raw && typeof raw === 'object') {
+				for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+					if (typeof key !== 'string') {
+						continue;
+					}
+					if (isConfigStackState(value)) {
+						store[key] = cloneStackState(value);
+					}
+				}
+			}
+		}
+
+		this.configStackStateCache = store;
+		return store;
+	}
+
+	private persistConfigStackStore(): void {
+		const config = this.config;
+		if (!config) {
+			return;
+		}
+		const store = this.configStackStateCache ?? {};
+		const serialized: Record<string, unknown> = {};
+		for (const [key, value] of Object.entries(store)) {
+			serialized[key] = cloneStackState(value);
+		}
+		config.set(CHART_SETTINGS.CONFIG_STACK_STATE, serialized);
+	}
+
+	private storeConfigStackState(chartId: string, state: ConfigStackState): void {
+		if (!chartId) {
+			return;
+		}
+		const store = this.ensureConfigStackStore();
+		store[chartId] = cloneStackState(state);
+		this.persistConfigStackStore();
+	}
+
+	private readonly handleConfigStackApply = (detail?: unknown): void => {
+		if (!isConfigStackApplyDetail(detail)) {
+			return;
+		}
+		this.storeConfigStackState(detail.chartId, detail.state);
+	};
+
+	private readonly handleConfigStackRevert = (detail?: unknown): void => {
+		if (!isConfigStackRevertDetail(detail)) {
+			return;
+		}
+		this.storeConfigStackState(detail.chartId, detail.state);
+	};
 
 	processData(): DataWrapper {
 		const config = this.config;
@@ -122,7 +205,7 @@ export class ChartView extends BasesView {
 		const xField = config.getAsPropertyId(CHART_SETTINGS.X);
 		const mode = config.get(CHART_SETTINGS.MULTI_CHART) ?? MultiChartMode.PROPERTY;
 		const propertyOrder = config.getOrder();
-		const labelProp = config.getAsPropertyId(CHART_SETTINGS.LABEL_PROP);
+		const labelProp = config.getAsPropertyId(CHART_SETTINGS.LABEL_PROP) ?? undefined;
 
 		if (mode !== MultiChartMode.GROUP && mode !== MultiChartMode.PROPERTY) {
 			// eslint-disable-next-line @typescript-eslint/no-base-to-string
@@ -224,51 +307,6 @@ export class ChartView extends BasesView {
 		};
 	}
 
-	getAdvancedOverrides(): AdvancedOverridesResult {
-		const config = this.config;
-		if (!config) {
-			return { overrides: null, errors: [] };
-		}
-
-		const raw = config.get(CHART_SETTINGS.ECHARTS_OVERRIDES);
-		const errors: string[] = [];
-
-		if (raw == null) {
-			return { overrides: null, errors };
-		}
-
-		if (typeof raw === 'object') {
-			if (isPlainObject(raw)) {
-				return { overrides: raw, errors };
-			}
-			errors.push('Advanced overrides must be a JSON object.');
-			return { overrides: null, errors };
-		}
-
-		if (typeof raw !== 'string') {
-			errors.push('Advanced overrides must be provided as a JSON string.');
-			return { overrides: null, errors };
-		}
-
-		const rawString = raw.trim();
-		if (rawString === '') {
-			return { overrides: null, errors };
-		}
-
-		try {
-			const parsed = JSON.parse(rawString) as unknown;
-			if (!isPlainObject(parsed)) {
-				errors.push('Advanced overrides must be a JSON object.');
-				return { overrides: null, errors };
-			}
-			return { overrides: parsed, errors };
-		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Unknown parse error';
-			errors.push(`Failed to parse advanced overrides: ${message}`);
-			return { overrides: null, errors };
-		}
-	}
-
 	async openFile(filePath: string, newTab: boolean): Promise<void> {
 		const tFile = this.app.vault.getFileByPath(filePath);
 		if (!tFile) {
@@ -331,22 +369,15 @@ export class ChartView extends BasesView {
 				placeholder: 'Leave empty to disable',
 				default: '',
 			},
-			{
-				displayName: 'Max Y override',
-				type: 'text',
-				key: CHART_SETTINGS.MAX_Y_OVERRIDE,
-				placeholder: 'Leave empty to disable',
-				default: '',
-			},
-			{
-				displayName: 'Advanced ECharts overrides (JSON)',
-				type: 'text',
-				key: CHART_SETTINGS.ECHARTS_OVERRIDES,
-				placeholder: 'Paste JSON object',
-				default: '',
-			},
-		];
-	}
+		{
+			displayName: 'Max Y override',
+			type: 'text',
+			key: CHART_SETTINGS.MAX_Y_OVERRIDE,
+			placeholder: 'Leave empty to disable',
+			default: '',
+		},
+	];
+}
 
 	static scatterViewOptions(): ViewOption[] {
 		return [
@@ -383,12 +414,50 @@ export class ChartView extends BasesView {
 	}
 }
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-	if (value == null) {
+function cloneStackState(state: ConfigStackState): ConfigStackState {
+	return {
+		axes: { ...state.axes },
+		series: { ...state.series },
+		legend: { ...state.legend },
+		tooltip: { ...state.tooltip },
+		dataset: { ...state.dataset },
+		interactions: { ...state.interactions },
+		theming: { ...state.theming },
+	};
+}
+
+function isConfigStackState(value: unknown): value is ConfigStackState {
+	if (!value || typeof value !== 'object') {
 		return false;
 	}
-	if (typeof value !== 'object') {
+	const record = value as Record<string, unknown>;
+	return (
+		isSection(record.axes) &&
+		isSection(record.series) &&
+		isSection(record.legend) &&
+		isSection(record.tooltip) &&
+		isSection(record.dataset) &&
+		isSection(record.interactions) &&
+		isSection(record.theming)
+	);
+}
+
+function isSection(value: unknown): value is Record<string, unknown> {
+	return Boolean(value && typeof value === 'object');
+}
+
+function isConfigStackApplyDetail(value: unknown): value is ConfigStackApplyDetail {
+	if (!value || typeof value !== 'object') {
 		return false;
 	}
-	return Object.getPrototypeOf(value) === Object.prototype;
+	const record = value as Record<string, unknown>;
+	return typeof record.chartId === 'string' && isConfigStackState(record.state);
+}
+
+function isConfigStackRevertDetail(value: unknown): value is ConfigStackRevertDetail {
+	if (!value || typeof value !== 'object') {
+		return false;
+	}
+	const record = value as Record<string, unknown>;
+	return typeof record.chartId === 'string' && isConfigStackState(record.state);
 }

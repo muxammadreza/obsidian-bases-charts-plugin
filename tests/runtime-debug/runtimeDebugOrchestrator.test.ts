@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import {
+import { RuntimeDebugOrchestrator } from '../../automation/dev/RuntimeDebugOrchestrator';
+import type {
 	LifecycleParticipant,
-	RuntimeDebugOrchestrator,
 	SteeringDirectiveEmitter,
 } from '../../automation/dev/RuntimeDebugOrchestrator';
 

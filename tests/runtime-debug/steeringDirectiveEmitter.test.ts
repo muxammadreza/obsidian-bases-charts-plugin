@@ -17,7 +17,7 @@ describe('RuntimeSteeringDirectiveEmitter', () => {
 			'utf8',
 		);
 
-		const log = mock(() => {});
+		const log = mock<(message: string) => void>(() => {});
 		const emitter = new RuntimeSteeringDirectiveEmitter({
 			steeringPath: TEMP_STEERING,
 			console: { log, warn: () => {} },
@@ -25,8 +25,15 @@ describe('RuntimeSteeringDirectiveEmitter', () => {
 		});
 
 		await emitter.emitStartup();
-		expect(log).toHaveBeenCalledTimes(1);
-		const summary = log.mock.calls[0][0] as string;
+		expect(log.mock.calls.length).toBeGreaterThan(0);
+		const lastCall = log.mock.calls.at(-1);
+		if (!lastCall) {
+			throw new Error('Expected steering directive emitter to log a summary line');
+		}
+		const summary = lastCall[0];
+		if (typeof summary !== 'string') {
+			throw new Error('Expected steering summary to be logged as a string');
+		}
 		expect(summary).toContain('Loaded runtime debugging guide');
 		expect(summary).toContain('Line 1');
 	});

@@ -1,22 +1,72 @@
 <script lang="ts">
 	import type { ChartView } from '../ChartView';
-	import type { EChartsDatum, EChartsOption } from '../echarts/options';
+	import type { EChartsDatum } from '../echarts/dataPipeline';
+	import type { EChartsOption } from '../echarts/options';
+	import ConfigStackHost from './config-stack/ConfigStackHost.svelte';
+	import { cloneConfigStackState, createEmptyConfigStackState } from './config-stack/state';
+	import { applyStackStateToOption, cloneOption } from './config-stack/optionTransforms';
+	import type {
+		ConfigStackApplyDetail,
+		ConfigStackRevertDetail,
+		ConfigStackState,
+		ConfigStackToggleDetail,
+	} from './config-stack/types';
 	import EChartsPlot from './EChartsPlot.svelte';
 
 	interface Props {
 		view: ChartView;
-		chartName: string;
-		xAxisLabel: string;
-		option: EChartsOption;
-		overrideErrors?: string[];
-		forceRender?: boolean;
-	}
+	chartName: string;
+	xAxisLabel: string;
+	option: EChartsOption;
+	errors?: string[];
+	forceRender?: boolean;
+	chartIdentifier: string;
+	stackState?: ConfigStackState;
+}
 
-	let { view, chartName, xAxisLabel, option, overrideErrors = [], forceRender = false }: Props = $props();
+let {
+	view,
+	chartName,
+	xAxisLabel,
+	option,
+	errors = [],
+	forceRender = false,
+	chartIdentifier,
+	stackState: providedStackState,
+}: Props = $props();
 
 	let width = $state(0);
 	let height = $state(0);
 	let enoughSpace = $derived(forceRender || (width > 100 && height > 100));
+
+	const computeInitialStackState = () => cloneConfigStackState(providedStackState ?? createEmptyConfigStackState());
+	const initialBaselineStackState = computeInitialStackState();
+	const initialActiveStackState = cloneConfigStackState(initialBaselineStackState);
+	const initialBaseOption = cloneOption(option);
+	const initialCurrentOption = applyStackStateToOption(initialBaseOption, initialActiveStackState);
+
+	let baselineStackState = $state(initialBaselineStackState);
+	let activeStackState = $state(initialActiveStackState);
+	let isDirty = $state(false);
+
+	let baseOption = $state(initialBaseOption);
+	let currentOption = $state(initialCurrentOption);
+
+	$effect(() => {
+		baseOption = cloneOption(option);
+	});
+
+	$effect(() => {
+		currentOption = applyStackStateToOption(baseOption, activeStackState);
+	});
+
+	$effect(() => {
+		const nextBaseline = computeInitialStackState();
+		baselineStackState = nextBaseline;
+		if (!isDirty) {
+			activeStackState = cloneConfigStackState(nextBaseline);
+		}
+	});
 
 	function handlePointClick(datum: EChartsDatum, params: unknown): void {
 		const native = (params as { event?: MouseEvent })?.event;
@@ -27,19 +77,45 @@
 	function handleRenderError(message: string): void {
 		view.notifyError(message);
 	}
+
+	function handleConfigApply(event: CustomEvent<ConfigStackApplyDetail>): void {
+		activeStackState = cloneConfigStackState(event.detail.state);
+		isDirty = true;
+		currentOption = applyStackStateToOption(baseOption, activeStackState);
+		view.events?.trigger?.('config-stack:apply', event.detail);
+	}
+
+	function handleConfigRevert(event: CustomEvent<ConfigStackRevertDetail>): void {
+		baselineStackState = cloneConfigStackState(event.detail.state);
+		activeStackState = cloneConfigStackState(event.detail.state);
+		isDirty = false;
+		currentOption = applyStackStateToOption(baseOption, activeStackState);
+		view.events?.trigger?.('config-stack:revert', event.detail);
+	}
+
+	function handleConfigToggle(event: CustomEvent<ConfigStackToggleDetail>): void {
+		view.events?.trigger?.('config-stack:toggle', event.detail);
+	}
 </script>
 
 <div class="bases-charts-plot-grid-item" bind:clientWidth={width} bind:clientHeight={height}>
 	{#if enoughSpace}
-		{#if overrideErrors.length > 0}
-			<div class="bases-charts-override-errors" role="alert">
-				{#each [...new Set(overrideErrors)] as message}
-					<span class="bases-charts-override-chip">{message}</span>
+		{#if errors.length > 0}
+			<div class="bases-charts-option-errors" role="alert">
+				{#each [...new Set(errors)] as message}
+					<span class="bases-charts-option-chip">{message}</span>
 				{/each}
 			</div>
 		{/if}
+		<ConfigStackHost
+			chartId={chartIdentifier}
+			initialState={baselineStackState}
+			on:applyConfig={handleConfigApply}
+			on:revert={handleConfigRevert}
+			on:toggle={handleConfigToggle}
+		></ConfigStackHost>
 		<EChartsPlot
-			option={option}
+			option={currentOption}
 			height={height}
 			width={width}
 			chartName={chartName}
@@ -61,14 +137,14 @@
 		min-width: var(--bases-charts-min-width);
 	}
 
-	.bases-charts-override-errors {
+	.bases-charts-option-errors {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--size-2-2);
 		margin-bottom: var(--size-4-2);
 	}
 
-	.bases-charts-override-chip {
+	.bases-charts-option-chip {
 		display: inline-flex;
 		align-items: center;
 		gap: var(--size-2-1);
@@ -79,7 +155,7 @@
 		font-size: var(--font-small);
 	}
 
-	.bases-charts-override-chip::before {
+	.bases-charts-option-chip::before {
 		content: '⚠';
 		font-size: 0.9em;
 	}

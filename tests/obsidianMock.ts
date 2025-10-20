@@ -22,6 +22,44 @@ mock.module('obsidian', () => {
 		}
 	}
 
+	class Notice {
+		message: string;
+
+		constructor(message: string) {
+			this.message = message;
+		}
+
+		hide(): void {
+			// do nothing
+		}
+	}
+
+	class Events {
+		trigger(): void {
+			// do nothing
+		}
+
+		on(): void {
+			// do nothing
+		}
+	}
+
+	class BasesView {
+		constructor(public readonly controller: unknown) {}
+
+		get data(): undefined {
+			return undefined;
+		}
+
+		get config(): undefined {
+			return undefined;
+		}
+
+		onload(): void {}
+
+		onunload(): void {}
+	}
+
 	return {
 		setIcon(iconEl: HTMLElement, iconName: string): void {
 			// do nothing
@@ -30,5 +68,8 @@ mock.module('obsidian', () => {
 		NumberValue,
 		StringValue,
 		DateValue,
+		Notice,
+		Events,
+		BasesView,
 	};
 });
