@@ -13,6 +13,7 @@ inclusion: always
     - `dev` - Development build with watch mode using Vite
     - `build` - Production build using Vite
     - `test` - Run tests with Bun test runner
+	- `test:e2e` - Run end-to-end tests with WebdriverIO (wdio-obsidian-service)
     - `format` - Format code with Prettier (includes Svelte plugin)
     - `lint` - ESLint with zero warnings policy
     - `check` - Full quality check (format, TypeScript, Svelte, lint, test)
@@ -135,6 +136,7 @@ export class ScatterChart extends UnifaceChart {
 ### Testing Strategy
 
 - Use Bun test runner with HappyDOM for component testing
+- Use wdio-obsidian-service for end-to-end tests
 - Test chart classes with mock data
 - Verify Obsidian integration with bases system
 - Test configuration panel functionality

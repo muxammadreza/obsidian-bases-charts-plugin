@@ -1,6 +1,5 @@
 ---
-inclusion: fileMatch
-fileMatchPattern: ['test/**/*.ts', 'test/**/*.e2e.ts', 'wdio.conf.mts']
+inclusion: always
 ---
 
 # Testing Environment Guidelines
@@ -25,7 +24,7 @@ fileMatchPattern: ['test/**/*.ts', 'test/**/*.e2e.ts', 'wdio.conf.mts']
 
 ### Configuration
 - **Config File**: `wdio.conf.mts`
-- **Test Vault**: `test/vaults/exampleVault` (contains sample bases data)
+- **Test Vault**: `test/vaults/exampleVault` (contains sample bases data, you might need to adjust the .base files when code changes.)
 - **Obsidian Versions**: Tests against latest and latest-beta automatically
 - **Mobile Testing**: Includes mobile emulation tests
 - **Parallel Execution**: Up to 4 Obsidian instances by default
