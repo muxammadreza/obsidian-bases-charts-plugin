@@ -28,13 +28,13 @@ export const PanelStateSchema = z
 		visible: z.boolean().default(false),
 		position: PanelPositionSchema,
 		collapsed: z.boolean().default(false),
-		activeSection: z.string().default('appearance'),
+		activeSection: z.string().default('chartType'),
 	})
 	.default({
 		visible: false,
 		position: PanelPositionSchema.parse({}),
 		collapsed: false,
-		activeSection: 'appearance',
+		activeSection: 'chartType',
 	});
 
 // TypeScript types

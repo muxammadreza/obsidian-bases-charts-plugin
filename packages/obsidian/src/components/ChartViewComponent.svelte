@@ -20,7 +20,7 @@
 	const panelStore = createPanelStateStore();
 
 	// Create chart instance based on chart type
-	let chart: ScatterChart | LineChart | BarChart | undefined = $state(createChartInstance());
+	let chart: ScatterChart | LineChart | BarChart | undefined = $state(createChartInstance($configStore.chartType));
 
 	// Create debounced configuration update function
 	let configUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -54,6 +54,16 @@
 		}
 	});
 
+	// Recreate chart instance when chart type changes
+	$effect(() => {
+		try {
+			const newChartType = $configStore.chartType;
+			chart = createChartInstance(newChartType);
+		} catch (error) {
+			console.error('ChartViewComponent: Error in chart type change effect:', error);
+		}
+	});
+
 	// Listen for data updates from ChartView
 	try {
 		chartView.events.on('data-updated', () => {
@@ -71,14 +81,14 @@
 	/**
 	 * Creates the appropriate chart instance based on the view type
 	 */
-	function createChartInstance(): ScatterChart | LineChart | BarChart | undefined {
+	function createChartInstance(chartType: string): ScatterChart | LineChart | BarChart | undefined {
 		try {
 			if (!chartView) {
 				console.error('ChartViewComponent: No chart view provided');
 				return undefined;
 			}
 
-			switch (chartView.type) {
+			switch (chartType) {
 				case SCATTER_CHART_VIEW_TYPE:
 					return new ScatterChart(chartView);
 				case LINE_CHART_VIEW_TYPE:
@@ -86,7 +96,7 @@
 				case BAR_CHART_VIEW_TYPE:
 					return new BarChart(chartView);
 				default:
-					console.error(`ChartViewComponent: Unknown chart type: ${chartView.type}`);
+					console.error(`ChartViewComponent: Unknown chart type: ${chartType}`);
 					return undefined;
 			}
 		} catch (error) {

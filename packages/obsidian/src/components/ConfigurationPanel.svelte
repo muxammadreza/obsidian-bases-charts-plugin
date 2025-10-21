@@ -5,6 +5,7 @@
 	import AppearanceSection from './config-sections/AppearanceSection.svelte';
 	import DataSection from './config-sections/DataSection.svelte';
 	import AxesSection from './config-sections/AxesSection.svelte';
+	import ChartTypeSection from './config-sections/ChartTypeSection.svelte';
 	import ErrorBoundary from './ErrorBoundary.svelte';
 
 	interface Props {
@@ -182,7 +183,7 @@
 			<div class="panel-content">
 				<!-- Section Navigation -->
 				<div class="section-nav" role="tablist">
-					{#each ['appearance', 'data', 'axes'] as section}
+					{#each ['chartType', 'appearance', 'data', 'axes'] as section}
 						<button
 							class="section-tab"
 							class:active={panelState.activeSection === section}
@@ -201,7 +202,9 @@
 				<div class="section-content" role="tabpanel" id="section-{panelState.activeSection}">
 					<ErrorBoundary fallback="Failed to load configuration section. Please try refreshing the panel.">
 						{#snippet children()}
-							{#if panelState.activeSection === 'appearance'}
+							{#if panelState.activeSection === 'chartType'}
+								<ChartTypeSection configStore={configStore} />
+							{:else if panelState.activeSection === 'appearance'}
 								<AppearanceSection configStore={configStore} />
 							{:else if panelState.activeSection === 'data'}
 								<DataSection configStore={configStore} />
