@@ -67,6 +67,8 @@ export class ChartView extends BasesView {
 	onload(): void {
 		try {
 			this.scrollEl.addClass('bases-chart-view');
+			// Add data-type attribute for test selectors and view identification
+			this.scrollEl.setAttribute('data-type', 'bases');
 
 			// Mount Svelte component with ChartPanel
 			this.svelteComponent = mount(ChartViewComponent, {
