@@ -10,13 +10,29 @@ inclusion: always
 
 - **Use Bun exclusively** for all package management and script execution
 - Available scripts (use `bun run <script>`):
-    - `dev` - Development build with watch mode using Vite
-    - `build` - Production build using Vite
-    - `test` - Run tests with Bun test runner
+    - `dev` - Development build with watch mode using Vite (outputs to `dist/dev/`)
+    - `build` - Production build using Vite (outputs to `dist/`)
+    - `build:dev` - Development build without watch mode
+    - `test` - Run unit tests with Bun test runner
+    - `test:log` - Run tests with logging enabled
+    - `test:e2e` - Run end-to-end tests with WebdriverIO (wdio-obsidian-service)
     - `format` - Format code with Prettier (includes Svelte plugin)
+    - `format:check` - Check formatting without making changes
     - `lint` - ESLint with zero warnings policy
+    - `lint:fix` - Auto-fix ESLint issues
+    - `svelte-check` - Run Svelte compiler checks
+    - `tsc` - TypeScript compilation check without emit
     - `check` - Full quality check (format, TypeScript, Svelte, lint, test)
     - `check:fix` - Auto-fix version of quality check
+    - `release` - Build and release automation
+    - `stats` - Generate project statistics
+
+### Development Environment
+
+- **Hot Reload**: Development builds automatically sync to vault directory if `REAL_VAULT_DIR` is set in `.env`
+- **Source Maps**: Inline source maps in development mode for debugging
+- **Build Output**: Single file output (`main.js`, `styles.css`, `manifest.json`) for Obsidian compatibility
+- **External Dependencies**: Obsidian APIs and CodeMirror are externalized in build
 
 ### Code Quality Requirements
 
@@ -61,15 +77,54 @@ export class ScatterChart extends UnifaceChart {
 #### Svelte Component Integration
 
 ```svelte
-<!-- CORRECT: Use ChartPanel component -->
+<!-- CORRECT: Use ChartPanel component from @ticatec/uniface-echarts -->
 <script>
-	import ChartPanel from '@ticatec/uniface-echarts';
+	import { ChartPanel } from '@ticatec/uniface-echarts';
 	import { ScatterChart } from './charts/ScatterChart';
 
-	const chart = new ScatterChart();
+	const chart = new ScatterChart(chartView);
 </script>
 
 <ChartPanel chart={chart} />
+```
+
+### Current Architecture Patterns
+
+#### State Management
+```typescript
+// CORRECT: Use Svelte 5 reactive state with stores
+const configStore = createChartConfigStore();
+const panelStore = createPanelStateStore();
+
+// Reactive updates with $effect
+$effect(() => {
+	const config = $configStore;
+	debouncedUpdateConfig(config);
+});
+```
+
+#### Error Handling
+```typescript
+// CORRECT: Comprehensive error handling with user feedback
+try {
+	const dataWrapper = chartView.processData();
+	updateChartData(dataWrapper);
+} catch (error) {
+	console.error('ChartViewComponent: Error in data update effect:', error);
+	// Show user-friendly error message
+}
+```
+
+#### Configuration Validation
+```typescript
+// CORRECT: Use Zod schemas for validation
+const validation = validateChartConfig(config);
+if (validation.success && validation.data) {
+	this.config = validation.data;
+	this.invalidate();
+} else {
+	console.error('Invalid chart configuration:', validation.errors);
+}
 ```
 
 ### Forbidden Patterns
@@ -80,6 +135,8 @@ export class ScatterChart extends UnifaceChart {
 - ❌ SveltePlot dependencies or patterns
 - ❌ Obsidian API versions below 1.10
 - ❌ Any TypeScript `any` types without explicit justification
+- ❌ Unvalidated configuration updates
+- ❌ Missing error boundaries in Svelte components
 
 ## Development Workflow
 
@@ -100,10 +157,11 @@ export class ScatterChart extends UnifaceChart {
 
 ### File Organization
 
-- Chart classes: Extend UnifaceChart, implement createOption() and postInitialize()
-- Svelte components: Use ChartPanel, follow Svelte 5 patterns
-- Configuration: Use Svelte stores with chart.invalidate() for updates
-- Main plugin: Integrate with Obsidian 1.10+ bases system
+- **Chart classes** (`packages/obsidian/src/charts/`): Extend UnifaceChart, implement createOption() and postInitialize()
+- **Svelte components** (`packages/obsidian/src/components/`): Use ChartPanel, follow Svelte 5 patterns with $state and $effect
+- **Configuration stores** (`packages/obsidian/src/stores/`): Use Svelte stores with Zod validation and debounced updates
+- **Main plugin** (`packages/obsidian/src/main.ts`): Register bases view with Obsidian 1.10+ system
+- **View integration** (`packages/obsidian/src/ChartView.ts`): Extends BasesView for data processing and file navigation
 
 ## Integration Requirements
 
@@ -116,10 +174,11 @@ export class ScatterChart extends UnifaceChart {
 
 ### Data Flow
 
-1. Obsidian bases data → Chart class constructor/methods
-2. Chart class createOption() → ECharts configuration
-3. Configuration changes → chart.invalidate() → automatic re-render
-4. User interactions → postInitialize() event handlers → Obsidian actions
+1. Obsidian bases data → ChartView.processData() → DataWrapper
+2. DataWrapper → Chart.updateData() → chart.invalidate() → createOption()
+3. Configuration changes → Chart.updateConfig() → chart.invalidate() → createOption()
+4. User interactions → postInitialize() event handlers → ChartView.openFile()
+5. Svelte stores manage configuration state with debounced updates
 
 ## Quality Assurance
 
@@ -134,8 +193,11 @@ export class ScatterChart extends UnifaceChart {
 
 ### Testing Strategy
 
-- Use Bun test runner with HappyDOM for component testing
-- Test chart classes with mock data
-- Verify Obsidian integration with bases system
-- Test configuration panel functionality
-- Performance testing with large datasets
+- **Unit Tests**: Use Bun test runner with HappyDOM for component testing
+- **E2E Tests**: Use wdio-obsidian-service with real Obsidian instances
+- **Test Data**: Use structured datasets (AAPL: 1260 entries, Movies: 100 entries, Penguins: 342 entries)
+- **Chart Testing**: Test chart classes with mock DataWrapper objects
+- **Integration Testing**: Verify Obsidian bases system integration
+- **Configuration Testing**: Test Svelte stores and validation with Zod schemas
+- **Error Boundary Testing**: Test ErrorBoundary components with fallback UI
+- **Performance Testing**: Test with large datasets using generated test data

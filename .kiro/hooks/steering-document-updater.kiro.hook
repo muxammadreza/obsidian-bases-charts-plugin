@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "name": "Steering Document Updater",
+  "description": "Triggers when user requests steering document updates or when fundamental changes/refactoring occurs in the codebase that would affect project guidance",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "packages/obsidian/src/**/*.ts",
+      "packages/obsidian/src/**/*.svelte",
+      "manifest.json",
+      "package.json",
+      "tsconfig.json",
+      ".kiro/steering/*.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the steering documents in .kiro/steering/ and update them based on recent changes or user requests. Focus on keeping the technical guidance current with the actual codebase implementation, especially around @ticatec/uniface-echarts usage, Obsidian 1.10+ APIs, and project architecture patterns, and testing. Update any outdated patterns, add new constraints discovered during development, and ensure consistency across all steering documents."
+  }
+}

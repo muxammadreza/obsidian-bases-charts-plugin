@@ -46,10 +46,10 @@ export class ScatterChart extends UnifaceChart {
 
 ```svelte
 <script>
-	import ChartPanel from '@ticatec/uniface-echarts';
+	import { ChartPanel } from '@ticatec/uniface-echarts';
 	import { ScatterChart } from './charts/ScatterChart';
 
-	const chart = new ScatterChart();
+	const chart = new ScatterChart(chartView);
 </script>
 
 <div class="chart-container">
@@ -85,12 +85,23 @@ export class ScatterChart extends UnifaceChart {
 
 ## Data Updates
 
-To update chart data, simply call `chart.invalidate()` after updating the data source. The wrapper will automatically call `createOption()` again and update the chart.
+To update chart data, use the updateData() method which calls invalidate() internally:
 
 ```typescript
-// Update data and refresh chart
-this.data = newData;
-this.chart.invalidate(); // Wrapper handles the rest
+// CORRECT: Update data through public method
+public updateData(dataWrapper: DataWrapper): void {
+	this.dataWrapper = dataWrapper;
+	this.invalidate(); // Wrapper handles the rest
+}
+
+// CORRECT: Update configuration through public method  
+public updateConfig(config: ChartConfig): void {
+	const validation = validateChartConfig(config);
+	if (validation.success && validation.data) {
+		this.config = validation.data;
+		this.invalidate();
+	}
+}
 ```
 
 ## Event Handling
@@ -117,25 +128,43 @@ protected postInitialize(chart: any): void {
 The chart classes should integrate with Obsidian's data and navigation:
 
 ```typescript
-export class ObsidianScatterChart extends UnifaceChart {
-	constructor(private basesView: EChartsChartView) {
+export class ScatterChart extends UnifaceChart {
+	private readonly chartView: ChartView;
+	private dataWrapper: DataWrapper | null = null;
+	private config: ChartConfig | null = null;
+
+	constructor(chartView: ChartView) {
 		super();
+		this.chartView = chartView;
 	}
 
-	protected createOption(): any {
-		// Get data from basesView
-		const data = this.basesView.getProcessedData();
-		return {
-			// ECharts configuration using Obsidian data
-		};
+	public updateData(dataWrapper: DataWrapper): void {
+		this.dataWrapper = dataWrapper;
+		this.invalidate();
 	}
 
-	protected postInitialize(chart: any): void {
+	public updateConfig(config: ChartConfig): void {
+		this.config = config;
+		this.invalidate();
+	}
+
+	protected createOption(): Record<string, unknown> {
+		// Use this.dataWrapper and this.config to generate ECharts options
+		return this.transformDataToEChartsOptions();
+	}
+
+	protected postInitialize(chart: unknown): void {
 		this.setEventHandlers({
 			onClick: params => {
-				// Use basesView for file navigation
-				if (params.data?.file) {
-					this.basesView.openFile(params.data.file, false);
+				const data = params.data as ProcessedData;
+				if (data?.file) {
+					void this.chartView.openFile(data.file, false);
+				}
+			},
+			onDoubleClick: params => {
+				const data = params.data as ProcessedData;
+				if (data?.file) {
+					void this.chartView.openFile(data.file, true);
 				}
 			},
 		});
@@ -145,20 +174,70 @@ export class ObsidianScatterChart extends UnifaceChart {
 
 ## Configuration Updates
 
-For real-time configuration updates, create methods that update internal state and call `invalidate()`:
+For real-time configuration updates, use the updateData() and updateConfig() methods:
 
 ```typescript
-export class ConfigurableChart extends UnifaceChart {
-	private config: ChartConfig;
+export class ScatterChart extends UnifaceChart {
+	private readonly chartView: ChartView;
+	private dataWrapper: DataWrapper | null = null;
+	private config: ChartConfig | null = null;
 
-	updateConfiguration(newConfig: ChartConfig): void {
-		this.config = newConfig;
-		this.invalidate(); // Wrapper will call createOption() with new config
+	public updateData(dataWrapper: DataWrapper): void {
+		this.dataWrapper = dataWrapper;
+		this.invalidate(); // Wrapper will call createOption() with new data
 	}
 
-	protected createOption(): any {
-		// Use this.config to generate ECharts options
-		return this.transformConfigToEChartsOptions(this.config);
+	public updateConfig(config: ChartConfig): void {
+		const validation = validateChartConfig(config);
+		if (validation.success && validation.data) {
+			this.config = validation.data;
+			this.invalidate(); // Wrapper will call createOption() with new config
+		}
+	}
+
+	protected createOption(): Record<string, unknown> {
+		// Use this.dataWrapper and this.config to generate ECharts options
+		return this.transformConfigToEChartsOptions();
+	}
+}
+```
+
+## Validation and Error Handling
+
+### Configuration Validation
+```typescript
+import { validateChartConfig } from 'packages/obsidian/src/utils/configValidation';
+
+public updateConfig(config: ChartConfig): void {
+	try {
+		const validation = validateChartConfig(config);
+		if (validation.success && validation.data) {
+			this.config = validation.data;
+			this.invalidate();
+		} else {
+			console.error('Invalid chart configuration:', validation.errors);
+			// Keep current configuration on validation error
+		}
+	} catch (error) {
+		console.error('Failed to update chart configuration:', error);
+	}
+}
+```
+
+### Error Handling in createOption()
+```typescript
+protected createOption(): Record<string, unknown> {
+	try {
+		if (!this.dataWrapper) {
+			console.warn('ScatterChart: No data wrapper available');
+			return this.createEmptyOption();
+		}
+
+		// Chart configuration logic...
+		return chartOptions;
+	} catch (error) {
+		console.error('ScatterChart: Failed to create chart options:', error);
+		return this.createEmptyOption('Error creating chart configuration');
 	}
 }
 ```
@@ -171,6 +250,8 @@ export class ConfigurableChart extends UnifaceChart {
 4. **Svelte Integration**: Seamless integration with Svelte components
 5. **Performance**: Optimized rendering and updates
 6. **Error Handling**: Built-in error boundaries and recovery
+7. **Type Safety**: Full TypeScript support with proper typing
+8. **Validation**: Built-in configuration validation with Zod schemas
 
 ## NEVER Do Manual Implementation
 

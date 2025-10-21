@@ -1,6 +1,5 @@
 ---
-inclusion: fileMatch
-fileMatchPattern: ['test/**/*.ts', 'test/**/*.e2e.ts', 'wdio.conf.mts']
+inclusion: always
 ---
 
 # Testing Environment Guidelines
@@ -25,7 +24,7 @@ fileMatchPattern: ['test/**/*.ts', 'test/**/*.e2e.ts', 'wdio.conf.mts']
 
 ### Configuration
 - **Config File**: `wdio.conf.mts`
-- **Test Vault**: `test/vaults/exampleVault` (contains sample bases data)
+- **Test Vault**: `test/vaults/exampleVault` (contains sample bases data, you might need to adjust the .base files when code changes.)
 - **Obsidian Versions**: Tests against latest and latest-beta automatically
 - **Mobile Testing**: Includes mobile emulation tests
 - **Parallel Execution**: Up to 4 Obsidian instances by default
@@ -66,21 +65,41 @@ await expect(element).toHaveText("Expected Text");
 ### Test Data Requirements
 
 #### For Chart Testing
-- **AAPL Dataset**: 1260 entries (stock data) - test/vaults/exampleVault/aapl/
-- **Movies Dataset**: 100 entries - test/vaults/exampleVault/movies/
-- **Penguins Dataset**: 342 entries - test/vaults/exampleVault/penguins/
-- **Bar Dataset**: 3 entries (simple bar chart) - test/vaults/exampleVault/bar/
+- **AAPL Dataset**: 1260 entries (stock data) - `test/vaults/exampleVault/aapl/`
+  - Files: `0.md` through `1259.md` with stock price data
+  - Base file: `aapl.base` defines properties like date, open, high, low, close, volume
+- **Movies Dataset**: Generated entries - `test/vaults/exampleVault/movies/`
+  - Base file: `movies.base` for movie data structure
+- **Penguins Dataset**: 342 entries - `test/vaults/exampleVault/penguins/`
+  - Base file: `penguins.base` for penguin species data
+- **Bar Dataset**: 3 entries (simple bar chart) - `test/vaults/exampleVault/bar/`
+  - Base file: `bar.base` for basic bar chart testing
 
 #### Base File Format
-Each `.base` file defines the structure and metadata for the corresponding dataset, used by the Obsidian bases system.
+Each `.base` file defines the structure and metadata for the corresponding dataset, used by the Obsidian bases system. These files configure:
+- Property definitions and types
+- Display names and formatting
+- Data validation rules
+- Chart configuration defaults
+
+#### Test Data Generation
+- Use `test/vaults/exampleData/generateFiles.ts` for creating test datasets
+- CSV files in `test/vaults/exampleData/` contain source data
+- Generated markdown files follow consistent naming patterns
 
 ## Testing Best Practices
 
 ### Unit Tests
-- Test chart classes by extending UnifaceChart
-- Mock Obsidian APIs using `test/unit/obsidianMock.ts`
-- Use HappyDOM for DOM-dependent tests
-- Focus on logic, data processing, and configuration validation
+- **Chart Classes**: Test ScatterChart, LineChart, BarChart extending UnifaceChart
+- **Mock Setup**: Use `test/unit/obsidianMock.ts` for Obsidian API mocking
+- **DOM Testing**: Use HappyDOM via `test/unit/happydom.ts` for DOM-dependent tests
+- **Svelte Testing**: Use `test/unit/svelteLoader.ts` for Svelte component testing
+- **Focus Areas**: 
+  - Data processing and transformation (`ChartData.ts`)
+  - Configuration validation with Zod schemas
+  - Store state management and reactivity
+  - Error handling and boundary conditions
+  - Chart option generation and ECharts integration
 
 ### E2E Tests
 - Use `obsidianPage.resetVault()` in `beforeEach` for clean state
@@ -117,17 +136,24 @@ bun run check
 
 ### Testing Chart Functionality
 ```typescript
-it('should render scatter chart', async function() {
-  // Open bases view
-  await browser.executeObsidianCommand("bases:open-view");
+it('should render scatter chart with bases data', async function() {
+  // Reset vault to clean state
+  await obsidianPage.resetVault("test/vaults/exampleVault");
   
-  // Select dataset and chart type
-  await browser.$("[data-testid='dataset-selector']").selectByValue("aapl");
-  await browser.$("[data-testid='chart-type']").selectByValue("scatter");
+  // Open bases view for AAPL dataset
+  await browser.executeObsidian(({app}) => {
+    // Access bases system and open chart view
+    const basesPlugin = app.plugins.getPlugin('bases-charts');
+    return basesPlugin?.openChartView('aapl');
+  });
   
-  // Verify chart renders
-  const chartContainer = browser.$(".chart-container canvas");
+  // Verify chart container exists with proper data-type
+  const chartContainer = browser.$(".bases-chart-view[data-type='bases']");
   await expect(chartContainer).toExist();
+  
+  // Verify ECharts canvas renders
+  const canvas = chartContainer.$("canvas");
+  await expect(canvas).toExist();
 });
 ```
 
