@@ -6,6 +6,7 @@
 import type { Writable, Readable } from 'svelte/store';
 import { writable, derived } from 'svelte/store';
 import { z } from 'zod';
+import { SCATTER_CHART_VIEW_TYPE, LINE_CHART_VIEW_TYPE, BAR_CHART_VIEW_TYPE } from 'packages/obsidian/src/ChartView';
 
 // Configuration schemas for validation
 export const ColorConfigSchema = z
@@ -99,6 +100,7 @@ export const InteractionConfigSchema = z
 // Main chart configuration schema
 export const ChartConfigSchema = z
 	.object({
+		chartType: z.enum([SCATTER_CHART_VIEW_TYPE, LINE_CHART_VIEW_TYPE, BAR_CHART_VIEW_TYPE]).default(SCATTER_CHART_VIEW_TYPE),
 		colors: ColorConfigSchema,
 		typography: TypographyConfigSchema,
 		axis: AxisConfigSchema,

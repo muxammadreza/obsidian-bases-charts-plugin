@@ -10,8 +10,13 @@ import { mount, unmount } from 'svelte';
 export const SCATTER_CHART_VIEW_TYPE = 'chart-scatter';
 export const LINE_CHART_VIEW_TYPE = 'chart-line';
 export const BAR_CHART_VIEW_TYPE = 'chart-bar';
+export const CHART_VIEW_TYPE = 'chart';
 
-export type ChartViewType = typeof SCATTER_CHART_VIEW_TYPE | typeof LINE_CHART_VIEW_TYPE | typeof BAR_CHART_VIEW_TYPE;
+export type ChartViewType =
+	| typeof SCATTER_CHART_VIEW_TYPE
+	| typeof LINE_CHART_VIEW_TYPE
+	| typeof BAR_CHART_VIEW_TYPE
+	| typeof CHART_VIEW_TYPE;
 
 export const CHART_SETTINGS = {
 	X: 'x',
@@ -62,6 +67,10 @@ export class ChartView extends BasesView {
 		this.type = type;
 		this.scrollEl = scrollEl;
 		this.events = new Events();
+
+		if (this.type === CHART_VIEW_TYPE) {
+			this.type = SCATTER_CHART_VIEW_TYPE;
+		}
 	}
 
 	onload(): void {
@@ -238,93 +247,6 @@ export class ChartView extends BasesView {
 		}
 	}
 
-	static getViewOptions(type: ChartViewType): ViewOption[] {
-		if (type === SCATTER_CHART_VIEW_TYPE) {
-			return ChartView.scatterViewOptions();
-		} else if (type === LINE_CHART_VIEW_TYPE) {
-			return ChartView.lineViewOptions();
-		} else if (type === BAR_CHART_VIEW_TYPE) {
-			return ChartView.barViewOptions();
-		} else {
-			return [];
-		}
-	}
-
-	static commonViewOptions(): ViewOption[] {
-		return [
-			{
-				displayName: 'Multi chart mode',
-				type: 'dropdown',
-				key: CHART_SETTINGS.MULTI_CHART,
-				options: {
-					[MultiChartMode.GROUP]: MultiChartMode.GROUP,
-					[MultiChartMode.PROPERTY]: MultiChartMode.PROPERTY,
-				},
-				default: MultiChartMode.PROPERTY,
-			},
-			{
-				displayName: 'X axis',
-				type: 'property',
-				key: CHART_SETTINGS.X,
-				filter: prop => !prop.startsWith('file.'),
-				placeholder: 'Property',
-			},
-			{
-				displayName: 'Sync Y axes',
-				type: 'toggle',
-				key: CHART_SETTINGS.SYNC_Y_AXES,
-				default: false,
-			},
-			{
-				displayName: 'Min Y override',
-				type: 'text',
-				key: CHART_SETTINGS.MIN_Y_OVERRIDE,
-				placeholder: 'Leave empty to disable',
-				default: '',
-			},
-			{
-				displayName: 'Max Y override',
-				type: 'text',
-				key: CHART_SETTINGS.MAX_Y_OVERRIDE,
-				placeholder: 'Leave empty to disable',
-				default: '',
-			},
-		];
-	}
-
-	static scatterViewOptions(): ViewOption[] {
-		return [
-			...ChartView.commonViewOptions(),
-			{
-				displayName: 'Label property',
-				type: 'property',
-				key: CHART_SETTINGS.LABEL_PROP,
-				placeholder: 'Property',
-			},
-		];
-	}
-
-	static lineViewOptions(): ViewOption[] {
-		return [...ChartView.commonViewOptions()];
-	}
-
-	static barViewOptions(): ViewOption[] {
-		return [
-			...ChartView.commonViewOptions(),
-			{
-				displayName: 'Show labels',
-				type: 'toggle',
-				key: CHART_SETTINGS.SHOW_LABELS,
-				default: true,
-			},
-			{
-				displayName: 'Show as percentages',
-				type: 'toggle',
-				key: CHART_SETTINGS.SHOW_PERCENTAGES,
-				default: false,
-			},
-		];
-	}
 
 	/**
 	 * Shows an error message to the user

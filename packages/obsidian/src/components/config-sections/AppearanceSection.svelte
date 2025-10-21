@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Writable } from 'svelte/store';
 	import type { ChartConfig, ColorConfig } from 'packages/obsidian/src/stores';
+	import './section-title.css';
 
 	interface Props {
 		configStore: Writable<ChartConfig>;
