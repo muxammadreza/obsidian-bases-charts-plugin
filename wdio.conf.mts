@@ -1,4 +1,5 @@
 import * as path from "path"
+import { existsSync } from "node:fs";
 import { parseObsidianVersions, obsidianBetaAvailable } from "wdio-obsidian-service";
 import { env } from "process";
 
@@ -24,6 +25,8 @@ if (env.CI) {
     console.log("obsidian-cache-key:", JSON.stringify([desktopVersions, mobileVersions]));
 }
 
+const pluginPath = existsSync(path.resolve("dist/dev")) ? "dist/dev" : "dist";
+
 export const config: WebdriverIO.Config = {
     runner: 'local',
     framework: 'mocha',
@@ -39,7 +42,7 @@ export const config: WebdriverIO.Config = {
             browserName: 'obsidian',
             'wdio:obsidianOptions': {
                 appVersion, installerVersion,
-                plugins: ["dist/dev"],
+                plugins: [pluginPath],
                 // If you need to switch between multiple vaults, you can omit this and
                 // use `reloadObsidian` to open vaults during the test.
                 vault: "test/vaults/exampleVault",
@@ -55,7 +58,7 @@ export const config: WebdriverIO.Config = {
             'wdio:obsidianOptions': {
                 appVersion, installerVersion,
                 emulateMobile: true,
-                plugins: ["dist/dev"],
+                plugins: [pluginPath],
                 vault: "test/vaults/exampleVault",
             },
             'goog:chromeOptions': {

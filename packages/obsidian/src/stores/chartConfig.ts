@@ -8,59 +8,112 @@ import { writable, derived } from 'svelte/store';
 import { z } from 'zod';
 
 // Configuration schemas for validation
-export const ColorConfigSchema = z.object({
-	primary: z.string().default('#3b82f6'),
-	secondary: z.string().default('#ef4444'),
-	background: z.string().default('transparent'),
-	text: z.string().default('#374151'),
-	grid: z.string().default('#e5e7eb'),
-});
+export const ColorConfigSchema = z
+	.object({
+		primary: z.string().default('#3b82f6'),
+		secondary: z.string().default('#ef4444'),
+		background: z.string().default('transparent'),
+		text: z.string().default('#374151'),
+		grid: z.string().default('#e5e7eb'),
+	})
+	.default({
+		primary: '#3b82f6',
+		secondary: '#ef4444',
+		background: 'transparent',
+		text: '#374151',
+		grid: '#e5e7eb',
+	});
 
-export const TypographyConfigSchema = z.object({
-	fontFamily: z.string().default('system-ui, -apple-system, sans-serif'),
-	fontSize: z.number().min(8).max(24).default(12),
-	fontWeight: z.enum(['normal', 'bold']).default('normal'),
-	titleSize: z.number().min(12).max(32).default(16),
-});
+export const TypographyConfigSchema = z
+	.object({
+		fontFamily: z.string().default('system-ui, -apple-system, sans-serif'),
+		fontSize: z.number().min(8).max(24).default(12),
+		fontWeight: z.enum(['normal', 'bold']).default('normal'),
+		titleSize: z.number().min(12).max(32).default(16),
+	})
+	.default({
+		fontFamily: 'system-ui, -apple-system, sans-serif',
+		fontSize: 12,
+		fontWeight: 'normal',
+		titleSize: 16,
+	});
 
-export const AxisConfigSchema = z.object({
-	showXAxis: z.boolean().default(true),
-	showYAxis: z.boolean().default(true),
-	showXGrid: z.boolean().default(true),
-	showYGrid: z.boolean().default(true),
-	xAxisName: z.string().default('X'),
-	yAxisName: z.string().default('Y'),
-	rotateXLabels: z.boolean().default(false),
-});
+export const AxisConfigSchema = z
+	.object({
+		showXAxis: z.boolean().default(true),
+		showYAxis: z.boolean().default(true),
+		showXGrid: z.boolean().default(true),
+		showYGrid: z.boolean().default(true),
+		xAxisName: z.string().default('X'),
+		yAxisName: z.string().default('Y'),
+		rotateXLabels: z.boolean().default(false),
+	})
+	.default({
+		showXAxis: true,
+		showYAxis: true,
+		showXGrid: true,
+		showYGrid: true,
+		xAxisName: 'X',
+		yAxisName: 'Y',
+		rotateXLabels: false,
+	});
 
-export const LegendConfigSchema = z.object({
-	show: z.boolean().default(true),
-	position: z.enum(['top', 'bottom', 'left', 'right']).default('top'),
-	orient: z.enum(['horizontal', 'vertical']).default('horizontal'),
-});
+export const LegendConfigSchema = z
+	.object({
+		show: z.boolean().default(true),
+		position: z.enum(['top', 'bottom', 'left', 'right']).default('top'),
+		orient: z.enum(['horizontal', 'vertical']).default('horizontal'),
+	})
+	.default({
+		show: true,
+		position: 'top',
+		orient: 'horizontal',
+	});
 
-export const AnimationConfigSchema = z.object({
-	enabled: z.boolean().default(true),
-	duration: z.number().min(0).max(3000).default(300),
-	easing: z.enum(['linear', 'quadraticIn', 'quadraticOut', 'cubicInOut']).default('cubicInOut'),
-});
+export const AnimationConfigSchema = z
+	.object({
+		enabled: z.boolean().default(true),
+		duration: z.number().min(0).max(3000).default(300),
+		easing: z.enum(['linear', 'quadraticIn', 'quadraticOut', 'cubicInOut']).default('cubicInOut'),
+	})
+	.default({
+		enabled: true,
+		duration: 300,
+		easing: 'cubicInOut',
+	});
 
-export const InteractionConfigSchema = z.object({
-	enableZoom: z.boolean().default(true),
-	enablePan: z.boolean().default(true),
-	enableBrush: z.boolean().default(false),
-	enableDataZoom: z.boolean().default(false),
-});
+export const InteractionConfigSchema = z
+	.object({
+		enableZoom: z.boolean().default(true),
+		enablePan: z.boolean().default(true),
+		enableBrush: z.boolean().default(false),
+		enableDataZoom: z.boolean().default(false),
+	})
+	.default({
+		enableZoom: true,
+		enablePan: true,
+		enableBrush: false,
+		enableDataZoom: false,
+	});
 
 // Main chart configuration schema
-export const ChartConfigSchema = z.object({
-	colors: ColorConfigSchema,
-	typography: TypographyConfigSchema,
-	axis: AxisConfigSchema,
-	legend: LegendConfigSchema,
-	animation: AnimationConfigSchema,
-	interaction: InteractionConfigSchema,
-});
+export const ChartConfigSchema = z
+	.object({
+		colors: ColorConfigSchema,
+		typography: TypographyConfigSchema,
+		axis: AxisConfigSchema,
+		legend: LegendConfigSchema,
+		animation: AnimationConfigSchema,
+		interaction: InteractionConfigSchema,
+	})
+	.default({
+		colors: ColorConfigSchema.parse({}),
+		typography: TypographyConfigSchema.parse({}),
+		axis: AxisConfigSchema.parse({}),
+		legend: LegendConfigSchema.parse({}),
+		animation: AnimationConfigSchema.parse({}),
+		interaction: InteractionConfigSchema.parse({}),
+	});
 
 // TypeScript types derived from schemas
 export type ColorConfig = z.infer<typeof ColorConfigSchema>;

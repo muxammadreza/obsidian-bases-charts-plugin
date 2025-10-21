@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "vite build --mode=development --watch",
     "build": "vite build --mode=production",
+    "build:dev": "vite build --mode=development",
     "tsc": "tsc -noEmit -skipLibCheck",
     "test": "bun test",
     "test:log": "LOG_TESTS=true bun test",
-    "test:e2e": "bun run dev && wdio run ./wdio.conf.mts",
+    "test:e2e": "bun run build:dev && wdio run ./wdio.conf.mts",
     "format": "prettier --write --plugin prettier-plugin-svelte .",
     "format:check": "prettier --check --plugin prettier-plugin-svelte .",
     "lint": "eslint --max-warnings=0 packages/** --no-warn-ignored",

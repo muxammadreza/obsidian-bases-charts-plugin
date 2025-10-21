@@ -8,20 +8,34 @@ import { writable } from 'svelte/store';
 import { z } from 'zod';
 
 // Panel position schema
-export const PanelPositionSchema = z.object({
-	x: z.number().default(100),
-	y: z.number().default(100),
-	width: z.number().min(200).max(800).default(320),
-	height: z.number().min(300).max(600).default(480),
-});
+export const PanelPositionSchema = z
+	.object({
+		x: z.number().default(100),
+		y: z.number().default(100),
+		width: z.number().min(200).max(800).default(320),
+		height: z.number().min(300).max(600).default(480),
+	})
+	.default({
+		x: 100,
+		y: 100,
+		width: 320,
+		height: 480,
+	});
 
 // Panel state schema
-export const PanelStateSchema = z.object({
-	visible: z.boolean().default(false),
-	position: PanelPositionSchema,
-	collapsed: z.boolean().default(false),
-	activeSection: z.string().default('appearance'),
-});
+export const PanelStateSchema = z
+	.object({
+		visible: z.boolean().default(false),
+		position: PanelPositionSchema,
+		collapsed: z.boolean().default(false),
+		activeSection: z.string().default('appearance'),
+	})
+	.default({
+		visible: false,
+		position: PanelPositionSchema.parse({}),
+		collapsed: false,
+		activeSection: 'appearance',
+	});
 
 // TypeScript types
 export type PanelPosition = z.infer<typeof PanelPositionSchema>;

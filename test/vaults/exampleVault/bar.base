@@ -1,0 +1,22 @@
+filters:
+  and:
+    - 'file.inFolder("bar")'
+properties:
+  note.Category:
+    displayName: Category
+  note.Value:
+    displayName: Value
+  note.Group:
+    displayName: Group
+views:
+  - type: chart-bar
+    name: Grouped sales
+    groupBy: note.Group
+    options:
+      x: note.Category
+      multi-chart-mode: Separate by group
+      show-labels: true
+      show-percentages: false
+      sync-y-axes: true
+    order:
+      - note.Value

@@ -8,6 +8,9 @@ class NumberValue {
 
 class StringValue {
 	constructor(public data: string) {}
+	toString() {
+		return this.data;
+	}
 }
 
 class DateValue {

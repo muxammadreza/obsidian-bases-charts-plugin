@@ -1,0 +1,28 @@
+filters:
+  and:
+    - 'file.inFolder("aapl")'
+properties:
+  note.Date:
+    displayName: Date
+  note.Open:
+    displayName: Open
+  note.High:
+    displayName: High
+  note.Low:
+    displayName: Low
+  note.Close:
+    displayName: Close
+  note.Volume:
+    displayName: Volume
+views:
+  - type: chart-line
+    name: AAPL closing price
+    options:
+      x: note.Date
+      multi-chart-mode: Separate by property
+      sync-y-axes: true
+    order:
+      - note.Close
+      - note.Open
+      - note.High
+      - note.Low
