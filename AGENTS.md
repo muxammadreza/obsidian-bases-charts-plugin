@@ -1,56 +1,46 @@
 # AGENTS.md Contract
 
 ## Steering Documents
-
-- Consult `.codex/steering/Project-specific.md` for product, tooling, and workflow direction; cite heading names without quoting text.
-- Consult `.codex/steering/context and api search.md` for documentation lookup policies; reference the relevant sections instead of restating them.
-- Consult `.codex/steering/uniface-echarts-usage.md` for chart architecture expectations; reference sections without copying sample code.
-- Resolve steering paths through project helpers or relative imports; avoid hardcoded absolute paths.
-- Treat steering files as read-only assets; follow the repository change-management process for updates.
+- Treat `.codex/steering/product.md`, `.codex/steering/tech.md`, and `.codex/steering/structure.md` as the authoritative sources for product, technical, and structural decisions.
+- Resolve steering paths with repository-approved helpers; avoid hardcoded absolute paths.
+- Keep steering files read-only and follow the sanctioned change-management flow for updates.
+- Summarize applicable steering guidance in outputs and cite the specific file/section instead of restating content.
 
 ## Decision Precedence
-
-1. Follow `.codex/steering/*.md`.
-2. Follow this contract.
-3. Apply other assumptions only when explicitly permitted.
+1) Steering documents under `.codex/steering/*.md`.
+2) This AGENTS.md contract (general repository conventions).
+3) Generic assumptions (avoid unless explicitly allowed).
 
 ## Agent Behavior Contract
-
-- Use project-provided abstractions for CLI and automation; avoid raw process spawning when wrappers exist.
-- Respect feature flags and configuration gates described in steering references and implementation notes.
-- Route logging through shared utilities with concise, meaningful entries.
-- Surface errors through centralized handling patterns documented in steering or shared modules.
-- Honor performance guidance from steering docs to keep the host responsive.
+- Prefer project-provided abstractions for CLI operations before spawning ad-hoc processes.
+- Respect feature flags and configuration gating documented in Steering or referenced code.
+- Use the shared logging utilities to capture lifecycle and error paths without excessive noise.
+- Route failures through centralized services/utilities rather than standalone try/catch blocks.
+- Honor performance and UX guidance from Steering to keep the host environment responsive.
 
 ## Paths & I/O
-
-- Use sanctioned filesystem helpers for read/write/create operations inside the workspace.
-- Resolve project paths with approved utilities, especially for `.codex/steering` references.
-- Limit modifications to directories approved by repository governance.
-- Leave `.codex/steering` content untouched; initiate changes via the sanctioned workflow.
+- Use sanctioned filesystem helpers for workspace reads, writes, and file creation.
+- Resolve paths for `.codex/steering` and related directories via approved utilities; avoid absolute paths.
+- Modify files only within approved workspace areas and keep `.codex/steering` untouched directly.
 
 ## CLI Integration
-
-- Compose CLI invocations with supported builders or wrappers before execution.
-- Reference approval modes, model flags, and defaults by their definition sites/tests instead of copying literal values.
-- Verify required tooling availability prior to execution and document setup steps if missing.
+- Build CLI commands through officially supported builders or wrappers before execution.
+- Reference definition sites or tests for approval modes and model flags instead of duplicating values.
+- Verify required tooling availability before invocation and surface setup guidance when missing.
 
 ## Submission Checklist (For Agents)
-
-- Confirm decisions against `.codex/steering/*.md` and cite files/sections without duplicating content.
-- Resolve steering paths via approved utilities; avoid absolute paths.
-- Respect feature flags and constraints recorded in the project.
-- Invoke CLI operations through sanctioned wrappers.
-- Keep this contract concise and index-like without copying steering constants.
+- Verify decisions against steering (`.codex/steering/*.md`) and cite files/sections without duplication.
+- Resolve steering paths via approved utilities and avoid absolute paths.
+- Respect documented feature flags and constraints.
+- Use project-sanctioned CLI wrappers where available.
+- Keep this contract concise and reference-first without restating constants.
 
 ## Non-Goals / Anti-Patterns
-
-- Do not bypass official wrappers/utilities for CLI execution.
-- Do not persist state in new globals outside established singletons.
-- Do not write outside approved directories or modify steering files directly.
-- Do not re-enable disabled features unless explicitly required.
+- Do not bypass official CLI wrappers or utilities when they exist.
+- Do not store state outside established singletons.
+- Do not write outside approved directories or overwrite steering content directly.
+- Do not re-enable disabled features without explicit instructions.
 
 ## Instructions to Apply
-
-- Create or update `AGENTS.md` at the repository root to match this contract.
-- Update nested directories with their own AGENTS files if overrides are required.
+- Write or update `AGENTS.md` at the repository root following this contract structure.
+- Update existing AGENTS.md files in place to maintain reference-first guidance without duplicating steering content.
