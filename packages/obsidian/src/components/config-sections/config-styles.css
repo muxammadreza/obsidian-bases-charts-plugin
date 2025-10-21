@@ -1,0 +1,182 @@
+/* Shared styles for configuration sections */
+
+.config-section {
+	margin-bottom: 24px;
+}
+
+.config-section h4 {
+	margin: 0 0 12px 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--text-normal);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	padding-bottom: 6px;
+}
+
+.config-group {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.config-label {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--text-normal);
+}
+
+.config-label.checkbox-label {
+	flex-direction: row;
+	align-items: center;
+	gap: 8px;
+}
+
+.config-label.checkbox-label input {
+	margin: 0;
+}
+
+/* Input styles */
+.text-input,
+.number-input,
+.select-input {
+	padding: 6px 8px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: 12px;
+	transition:
+		border-color 0.2s ease,
+		box-shadow 0.2s ease;
+}
+
+.text-input:focus,
+.number-input:focus,
+.select-input:focus {
+	outline: none;
+	border-color: var(--text-accent);
+	box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb), 0.2);
+}
+
+.text-input:hover,
+.number-input:hover,
+.select-input:hover {
+	border-color: var(--background-modifier-border-hover);
+}
+
+.color-input {
+	width: 40px;
+	height: 32px;
+	padding: 2px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background: var(--background-primary);
+	cursor: pointer;
+	transition: border-color 0.2s ease;
+}
+
+.color-input:hover {
+	border-color: var(--background-modifier-border-hover);
+}
+
+.color-input:focus {
+	outline: none;
+	border-color: var(--text-accent);
+	box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb), 0.2);
+}
+
+.checkbox-input {
+	width: 16px;
+	height: 16px;
+	accent-color: var(--text-accent);
+	cursor: pointer;
+}
+
+.number-input {
+	width: 80px;
+}
+
+.select-input {
+	cursor: pointer;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+	.config-group {
+		gap: 10px;
+	}
+
+	.config-label {
+		font-size: 11px;
+	}
+
+	.text-input,
+	.number-input,
+	.select-input {
+		font-size: 11px;
+		padding: 5px 6px;
+	}
+
+	.color-input {
+		width: 36px;
+		height: 28px;
+	}
+}
+
+/* Validation states */
+.config-label.error .text-input,
+.config-label.error .number-input,
+.config-label.error .select-input {
+	border-color: var(--text-error);
+	box-shadow: 0 0 0 2px rgba(var(--text-error-rgb), 0.2);
+}
+
+.config-label.success .text-input,
+.config-label.success .number-input,
+.config-label.success .select-input {
+	border-color: var(--text-success);
+	box-shadow: 0 0 0 2px rgba(var(--text-success-rgb), 0.2);
+}
+
+/* Disabled state */
+.text-input:disabled,
+.number-input:disabled,
+.select-input:disabled,
+.checkbox-input:disabled,
+.color-input:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	background: var(--background-secondary);
+}
+
+/* Loading state */
+.config-group.loading {
+	opacity: 0.6;
+	pointer-events: none;
+}
+
+.config-group.loading::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 16px;
+	height: 16px;
+	margin: -8px 0 0 -8px;
+	border: 2px solid var(--background-modifier-border);
+	border-top-color: var(--text-accent);
+	border-radius: 50%;
+	animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}

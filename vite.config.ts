@@ -11,7 +11,7 @@ const entryFile = 'packages/obsidian/src/main.ts';
 export default defineConfig(async ({ mode }) => {
 	const { resolve } = path;
 	const prod = mode === 'production';
-	const outDir = prod ? 'dist/' : `exampleVault/.obsidian/plugins/bases-charts/`;
+	const outDir = prod ? 'dist' : `exampleVault/.obsidian/plugins/bases-charts/`;
 
 	let plugins = [
 		svelte(),
@@ -23,7 +23,7 @@ export default defineConfig(async ({ mode }) => {
 			targets: [
 				{
 					src: 'manifest.json',
-					dest: outDir,
+					dest: '',
 				},
 			],
 		}),
@@ -47,15 +47,18 @@ export default defineConfig(async ({ mode }) => {
 			sourcemap: prod ? false : 'inline',
 			cssCodeSplit: false,
 			emptyOutDir: false,
-			outDir: '',
+			outDir: outDir,
+			// Ensure single file output for Obsidian
 			rollupOptions: {
-				input: {
-					main: resolve(__dirname, entryFile),
-				},
 				output: {
-					dir: outDir,
-					entryFileNames: 'main.js',
 					assetFileNames: 'styles.css',
+					entryFileNames: 'main.js',
+					// Disable code splitting for Obsidian plugins
+					manualChunks: undefined,
+					inlineDynamicImports: true,
+					// Ensure proper CommonJS export for Obsidian
+					exports: 'default',
+					format: 'cjs',
 				},
 				external: [
 					'obsidian',

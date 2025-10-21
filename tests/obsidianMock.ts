@@ -6,4 +6,13 @@ mock.module('obsidian', () => ({
 		// do nothing
 	},
 	moment: Moment,
+	BasesView: class BasesView {
+		constructor() {}
+	},
+	Events: class Events {
+		on() {}
+		off() {}
+		trigger() {}
+		offref() {}
+	},
 }));

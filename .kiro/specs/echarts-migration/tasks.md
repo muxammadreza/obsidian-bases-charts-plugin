@@ -1,0 +1,348 @@
+# Implementation Plan
+
+- [x]   1. Remove SveltePlot and Install Wrapper Dependencies
+    - Remove all SveltePlot dependencies and implementation
+    - Install @ticatec/uniface-echarts and required dependencies
+    - Clean up SveltePlot-based chart components
+    - **MANDATORY: Fix all linting errors and TypeScript issues after each subtask**
+    - _Requirements: 1.1, 8.1, 8.2_
+
+- [x] 1.1 Remove SveltePlot implementation
+    - Delete all SveltePlot chart components (ScatterPlot.svelte, LinePlot.svelte, BarPlot.svelte, etc.)
+    - Remove svelteplot dependency from package.json
+    - Clean up SveltePlot imports and references in ChartView.ts
+    - Remove SveltePlot-specific configuration and styling
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run lint` and fix all ESLint errors/warnings
+        - Run `npm run tsc` and resolve all TypeScript errors
+        - Ensure no SveltePlot references remain in codebase
+        - Verify all imports are updated to remove SveltePlot dependencies
+    - _Requirements: 1.1, 8.1_
+
+- [x] 1.2 Install wrapper dependencies
+    - Add @ticatec/uniface-echarts to package.json devDependencies
+    - Add echarts as peer dependency for ECharts 6 support
+    - Install additional required dependencies (Zod for validation, etc.)
+    - Update TypeScript configuration for new dependencies
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm install` and ensure clean installation
+        - Run `npm run tsc` and resolve any new TypeScript errors
+        - Verify all new dependencies are properly typed
+        - Test build process with new dependencies
+    - _Requirements: 1.2, 8.1_
+
+- [x] 1.3 Clean up legacy chart strure
+    - Remove charts/ directory with SveltePlot components
+    - Clean up ChartView.ts to remove SveltePlot-specific code
+    - Update main.ts to prepare for new chart architecture
+    - Simplify project structure for wrapper-based implementation
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run lint` and fix all ESLint errors/warnings
+        - Run `npm run tsc` and resolve all TypeScript errors
+        - Ensure clean project structure without legacy code
+        - Verify plugin still loads (even if charts don't wet)
+    - _Requirements: 8.1_
+
+- [x]   2. Implement Chart Classes Using UnifaceChart
+    - Create chart classes that extend UnifaceChart base class
+    - Implement createOption() method for each chart type
+    - Use postInitialize() for event handler setup
+    - **MANDATORY: All code must pass linting and type checking before proceeding**
+    - _Requirements: 1.1, 1.2, 1.3_
+
+- [x] 2.1 Create ScatterChart class
+    - Extend UnifaceChart and implement createOption() method
+    - Transform Obsidian data to ECharts scatter chart options
+    - Implement postInitialize() for click events and file navigation
+    - Add proper TypeScript types for all methods and data
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run lint` and fix all ESLint errors/warnings
+        - Run `npm run tsc` and resolve all TypeScript errors
+        - Ensure proper import of UnifaceChart from @ticatec/uniface-echarts
+        - Verify all method signatures match UnifaceChart base class
+        - Add proper JSDoc documentation for all public methods
+        - Ensure no 'any' types in chart class implementation
+    - _Requirements: 1.1, 1.3_
+
+- [x] 2.2 Create LineChart class
+    - Extend UnifaceChart and implement createOption() method
+    - Transform Obsidian data to ECharts line chart options
+    - Implement postInitialize() for interaction events
+    - Add line-specific configuration options and styling
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run lint` and fix all ESLint errors/warnings
+        - Run `npm run tsc` and resolve all TypeScript errors
+        - Ensure proper ECharts 6 option types for line charts
+        - Verify event handler types match wrapper expectations
+        - Add comprehensive type definitions for line chart data
+        - Test chart class instantiation and method calls
+    - _Requirements: 1.1, 1.3_
+
+- [x] 2.3 Create BarChart class
+    - Extend UnifaceChart and implement createOption() method
+    - Transform Obsidian data to ECharts bar chart options
+    - Implement postInitialize() for bar-specific interactions
+    - Add bar chart configuration and stacking options
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run lint` and fix all ESLint errors/warnings
+        - Run `npm run tsc` and resolve all TypeScript errors
+        - Ensure proper ECharts 6 option types for bar charts
+        - Verify all chart classes follow consistent patterns
+        - Add proper error handling for data transformation
+        - Test all chart classes with sample data
+    - _Requirements: 1.1, 1.3_
+
+- [x]   3. Integrate ChartPanel Component
+    - Use ChartPanel from @ticatec/uniface-echarts in Svelte components
+    - Replace SveltePlot rendering with wrapper component
+    - Implement proper chart lifecycle using wrapper methods
+    - **MANDATORY: Ensure Svelte 5 compliance and proper component integration**
+    - _Requirements: 1.1, 1.2_
+
+- [x] 3.1 Create Svelte chart view component
+    - Import and use ChartPanel component from @ticatec/uniface-echarts
+    - Pass chart class instances to ChartPanel component
+    - Replace SveltePlot components with ChartPanel usage
+    - Implement proper component lifecycle with wrapper integration
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run lint` and fix all ESLint errors/warnings
+        - Run `npm run tsc` and resolve all TypeScript errors
+        - Run `npm run svelte-check` and fix all Svelte component errors
+        - Ensure proper Svelte 5 syntax and patterns
+        - Verify ChartPanel import and usage matches wrapper documentation
+        - Test component mounting and unmounting
+    - _Requirements: 1.1, 1.2_
+
+- [x] 3.2 Update ChartView integration
+    - Modify ChartView.ts to create chart class instances
+    - Use ChartPanel component instead of SveltePlot components
+    - Remove all SveltePlot-specific instance management andnup code
+    - Implement proper data updates using chart.invalidate() method
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run lint` and fix all ESLint errors/warnings
+        - Run `npm run tsc` and resolve all TypeScript errors
+        - Ensure proper Obsidian 1.10+ BasesView integration
+        - Verify chart instance creation and lifecycle management
+        - Test data updates and chart.invalidate() functionality
+        - Ensure proper cleanup in onunload() method
+    - _Requirements: 1.1, 1.2_
+
+- [x] 3.3 Fix plugin registration system
+    - Update main.ts to work with new chart class architecture
+    - Remove SveltePlot-specific instance management from plu
+    - Use wrapper's automatic cleanup and lifecycle management
+    - Ensure proper integration with Obsidian's bases system
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run lint` and fix all ESLint errors/warnings
+        - Run `npm run tsc` and resolve all TypeScript errors
+        - Verify proper Obsidian plugin structure and exports
+        - Test plugin loading and unloading in Obsidian
+        - Ensure proper bases view registration
+        - Verify no memory leaks or cleanup issues
+    - _Requirements: 1.1, 1.2_
+
+- [x]   4. Implement Simple Configuration Management
+    - Use basic Svelte stores for configuration state
+    - Call chart.invalidate() when configuration changes
+    - Let wrapper handle all chart updates automatically
+    - **MANDATORY: Ensure type-safe configuration with proper validation**
+    - _Requirements: 5.1, 5.2_
+
+- [x] 4.1 Create simple configuration stores
+    - Use writable Svelte stores for chart configuration
+    - Create derived stores for computed configuration values
+    - Replace SveltePlot configuration with wrapper-compatiblion
+    - Use simple reactive patterns with automatic updates
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run lint` and fix all ESLint errors/warnings
+        - Run `npm run tsc` and resolve all TypeScript errors
+        - Ensure proper Svelte store types and patterns
+        - Add comprehensive TypeScript interfaces for configuration
+        - Verify store subscriptions and unsubscriptions
+        - Test store reactivity and derived store updates
+    - _Requirements: 5.1, 5.2_
+
+- [x] 4.2 Implement configuration updates
+    - Update chart classes to accept configuration in constructor or methods
+    - Call chart.invalidate() when configuration changes in stores
+    - Let wrapper handle all chart updates and re-rendering
+    - Remove SveltePlot configuration transformation and mering
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run lint` and fix all ESLint errors/warnings
+        - Run `npm run tsc` and resolve all TypeScript errors
+        - Ensure proper configuration type safety in chart classes
+        - Verify chart.invalidate() is called correctly
+        - Test configuration changes trigger chart updates
+        - Add error handling for invalid configurations
+    - _Requirements: 5.1, 5.2_
+
+- [x] 4.3 Connect configuration to chart classes
+    - Pass configuration to chart classes through constructor or methods
+    - Use configuration in createOption() method to generate ECharts options
+    - Implement configuration validation using simple Zod schemas
+    - Replace SveltePlot configuration system with ECharts-compatiblem
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run lint` and fix all ESLint errors/warnings
+        - Run `npm run tsc` and resolve all TypeScript errors
+        - Ensure proper Zod schema validation
+        - Verify configuration-to-ECharts-options transformation
+        - Test all configuration options affect chart rendering
+        - Add comprehensive error handling and validation
+    - _Requirements: 5.1, 5.2_
+
+- [x]   5. Create Configuration Panel
+    - Create simple floating panel using basic Svelte components
+    - Use wrapper's automatic updates instead of manual synchronization
+    - Focus on essential configuration options
+    - **MANDATORY: Ensure accessible, responsive UI with proper event handling**
+    - _Requirements: 2.1, 2.2, 3.1_
+
+- [x] 5.1 Create basic floating panel component
+    - Implement simple draggable panel using CSS and basic event handling
+    - Create collapsible sections for different configuration categories
+    - Use simple Svelte reactivity instead of complex state management
+    - Build panel from scratch without SveltePlot dependencies
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run lint` and fix all ESLint errors/warnings
+        - Run `npm run tsc` and resolve all TypeScript errors
+        - Run `npm run svelte-check` and fix all Svelte component errors
+        - Ensure proper Svelte 5 event handling and reactivity
+        - Test panel dragging and resizing functionality
+        - Verify accessibility attributes and keyboard navigation
+        - Test responsive behavior on different screen sizes
+    - _Requirements: 2.1, 2.2_
+
+- [x] 5.2 Implement essential configuration sections
+    - Create basic appearance section with color and theme options
+    - Add simple data section with basic filtering and grouping
+    - Implement axes section with essential axis configuration
+    - Focus on core functionality instead of comprehensive options
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run lint` and fix all ESLint errors/warnings
+        - Run `npm run tsc` and resolve all TypeScript errors
+        - Run `npm run svelte-check` and fix all Svelte component errors
+        - Ensure proper form validation and error handling
+        - Test all configuration controls and their effects
+        - Verify proper two-way data binding with stores
+        - Add proper TypeScript types for all configuration options
+    - _Requirements: 3.1, 3.2_
+
+- [x] 5.3 Connect panel to chart updates
+    - Update configuration stores when panel controls change
+    - Let configuration store subscriptions trigger chart.invalidate()
+    - Remove SveltePlot configuration synchronization and update handling
+    - Use wrapper's automatic update system for all chart changes
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run lint` and fix all ESLint errors/warnings
+        - Run `npm run tsc` and resolve all TypeScript errors
+        - Verify configuration changes immediately update charts
+        - Test debouncing of rapid configuration changes
+        - Ensure no memory leaks from store subscriptions
+        - Test panel-to-chart communication thoroughly
+        - Add error boundaries for configuration failures
+    - _Requirements: 2.1, 3.1_
+
+- [x]   6. Fix Integration and Error Handling
+    - Ensure proper integration with Obsidian 1.10+ bases system
+    - Add basic error handling using wrapper's built-in capabilities
+    - Fix all TypeScript errors and linting issues
+    - **MANDATORY: Complete code quality compliance before proceeding**
+    - _Requirements: 8.1, 8.2, 9.1_
+
+- [x] 6.1 Fix Obsidian integration
+    - Ensure proper integration with Obsidian 1.10+ bases APIs
+    - Use correct BasesView integration with chart classes
+    - Fix view registration and lifecycle management
+    - Test plugin loading, unloading, and updates
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run lint` and fix all ESLint errors/warnings
+        - Run `npm run tsc` and resolve all TypeScript errors
+        - Verify proper Obsidian 1.10+ API usage throughout
+        - Test plugin in actual Obsidian environment
+        - Ensure proper bases view registration and lifecycle
+        - Verify no deprecated API usage remains
+        - Test with real vault data and bases
+    - _Requirements: 9.1, 9.2_
+
+- [x] 6.2 Add basic error handling
+    - Use wrapper's built-in error handling capabilities
+    - Add simple try-catch blocks for data transformation
+    - Implement basic validation for chart configuration
+    - Remove SveltePlot error recovery and validation systms
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run lint` and fix all ESLint errors/warnings
+        - Run `npm run tsc` and resolve all TypeScript errors
+        - Ensure proper error types and error handling patterns
+        - Test error scenarios and recovery mechanisms
+        - Verify user-friendly error messages
+        - Add comprehensive logging for debugging
+        - Test edge cases and invalid data scenarios
+    - _Requirements: 8.1, 8.2_
+
+- [x] 6.3 Fix code quality issues
+    - Resolve all TypeScript errors and unsafe type assertions
+    - Fix ESLint warnings and code quality issues
+    - Remove all 'any' types and add proper type definitions
+    - Update imports to use correct APIs and remove deprecated calls
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run check` (full quality check) and ensure it passes
+        - Verify zero TypeScript errors across entire codebase
+        - Ensure zero ESLint warnings or errors
+        - Confirm no 'any' types remain in codebase
+        - Verify all imports use current, non-deprecated APIs
+        - Run `npm run format:check` and ensure code formatting compliance
+        - Test build process completes without warnings
+    - _Requirements: 8.1, 8.2_
+
+- [x]   7. Testing and Final Polish
+    - Test all chart types with real Obsidian data
+    - Verify configuration panel functionality
+    - Ensure proper cleanup and memory management
+    - **MANDATORY: Comprehensive testing and final quality assurance**
+    - _Requirements: 9.1, 9.2_
+
+- [x] 7.1 Test chart functionality
+    - Test scatter, line, and bar charts with various data types
+    - Verify chart interactions and file navigation
+    - Test configuration changes and real-time updates
+    - Ensure charts work properly with Obsidian's bases system
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run check` and ensure all checks pass
+        - Test all chart types with real Obsidian vault data
+        - Verify chart interactions (click, hover, selection)
+        - Test file navigation and Obsidian integration
+        - Verify configuration changes update charts in real-time
+        - Test performance with large datasets
+        - Ensure no console errors or warnings during usage
+    - _Requirements: 9.1, 9.2_
+
+- [x] 7.2 Test configuration panel
+    - Test all configuration sections and controls
+    - Verify panel dragging, resizing, and persistence
+    - Test configuration updates and chart synchronization
+    - Ensure panel works on different screen sizes
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run check` and ensure all checks pass
+        - Test all configuration controls and their effects
+        - Verify panel dragging, resizing, and positioning
+        - Test configuration persistence across sessions
+        - Verify responsive behavior on mobile and desktop
+        - Test accessibility features and keyboard navigation
+        - Ensure no memory leaks from panel operations
+    - _Requirements: 9.1, 9.2_
+
+- [x] 7.3 Final cleanup and optimization
+    - Remove all unused code and dependencies
+    - Optimize chart performance and memory usage
+    - Complete final code review and quality assurance
+    - Verify plugin works correctly in Obsidian 1.10+
+    - **MANDATORY CODE QUALITY CHECKS:**
+        - Run `npm run check` and ensure perfect compliance
+        - Remove all unused imports, variables, and functions
+        - Verify no dead code or unreachable code remains
+        - Optimize bundle size and remove unused dependencies
+        - Test plugin loading time and memory usage
+        - Perform final code review for best practices
+        - Test plugin in multiple Obsidian environments
+        - Verify compatibility with Obsidian 1.10+ features
+    - _Requirements: 9.1, 9.2_

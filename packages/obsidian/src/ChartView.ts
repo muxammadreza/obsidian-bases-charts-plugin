@@ -3,9 +3,7 @@ import type { BasesPropertyId, ViewOption } from 'obsidian';
 import { BasesView, Events } from 'obsidian';
 import type { DataWrapper, ProcessedData } from 'packages/obsidian/src/ChartData';
 import { emptyDataWrapper, GroupSeparatedData, PropertySeparatedData } from 'packages/obsidian/src/ChartData';
-import BarPlot from 'packages/obsidian/src/charts/BarPlot.svelte';
-import LinePlot from 'packages/obsidian/src/charts/LinePlot.svelte';
-import ScatterPlot from 'packages/obsidian/src/charts/ScatterPlot.svelte';
+import ChartViewComponent from 'packages/obsidian/src/components/ChartViewComponent.svelte';
 import { parseValueAsNumber, parseValueAsX } from 'packages/obsidian/src/utils/utils';
 import { mount, unmount } from 'svelte';
 
@@ -57,7 +55,7 @@ export class ChartView extends BasesView {
 	readonly type: ChartViewType;
 	readonly scrollEl: HTMLElement;
 	readonly events: Events;
-	svelteComponent: ReturnType<typeof ScatterPlot> | null = null;
+	svelteComponent: unknown = null;
 
 	constructor(type: ChartViewType, controller: QueryController, scrollEl: HTMLElement) {
 		super(controller);
@@ -67,79 +65,101 @@ export class ChartView extends BasesView {
 	}
 
 	onload(): void {
-		this.scrollEl.addClass('bases-chart-view');
+		try {
+			this.scrollEl.addClass('bases-chart-view');
 
-		if (this.type === SCATTER_CHART_VIEW_TYPE) {
-			this.svelteComponent = mount(ScatterPlot, {
+			// Mount Svelte component with ChartPanel
+			this.svelteComponent = mount(ChartViewComponent, {
 				target: this.scrollEl,
 				props: {
-					view: this,
+					chartView: this,
 				},
 			});
-		} else if (this.type === LINE_CHART_VIEW_TYPE) {
-			this.svelteComponent = mount(LinePlot, {
-				target: this.scrollEl,
-				props: {
-					view: this,
-				},
-			});
-		} else if (this.type === BAR_CHART_VIEW_TYPE) {
-			this.svelteComponent = mount(BarPlot, {
-				target: this.scrollEl,
-				props: {
-					view: this,
-				},
-			});
+		} catch (error) {
+			console.error('Failed to load chart view:', error);
+			this.showErrorMessage('Failed to initialize chart view', error);
 		}
 	}
 
 	onunload(): void {
-		if (this.svelteComponent) {
-			void unmount(this.svelteComponent);
+		try {
+			// Clean up Svelte component and chart instances
+			if (this.svelteComponent) {
+				void unmount(this.svelteComponent as Record<string, unknown>);
+				this.svelteComponent = null;
+			}
+
+			// Clean up event listeners
+			this.events.offref(this);
+		} catch (error) {
+			console.error('Error during chart view cleanup:', error);
+			// Continue cleanup even if there are errors
 		}
 	}
 
 	onDataUpdated(): void {
-		this.events.trigger('data-updated');
+		try {
+			// Trigger event for Svelte component to update chart data
+			this.events.trigger('data-updated');
+		} catch (error) {
+			console.error('Error updating chart data:', error);
+			this.showErrorMessage('Failed to update chart data', error);
+		}
 	}
 
 	processData(): DataWrapper {
-		const xField = this.config.getAsPropertyId(CHART_SETTINGS.X);
-		const mode = this.config.get(CHART_SETTINGS.MULTI_CHART) ?? MultiChartMode.PROPERTY;
-		const propertyOrder = this.config.getOrder();
+		try {
+			const xField = this.config.getAsPropertyId(CHART_SETTINGS.X);
+			const mode = this.config.get(CHART_SETTINGS.MULTI_CHART) ?? MultiChartMode.PROPERTY;
+			const propertyOrder = this.config.getOrder();
 
-		if (mode !== MultiChartMode.GROUP && mode !== MultiChartMode.PROPERTY) {
-			// eslint-disable-next-line @typescript-eslint/no-base-to-string
-			console.warn(`Invalid multi chart mode: ${mode}`);
-			return emptyDataWrapper(this);
-		}
+			if (mode !== MultiChartMode.GROUP && mode !== MultiChartMode.PROPERTY) {
+				// eslint-disable-next-line @typescript-eslint/no-base-to-string
+				console.warn(`Invalid multi chart mode: ${mode}`);
+				return emptyDataWrapper(this);
+			}
 
-		if (!xField) {
-			return emptyDataWrapper(this);
-		}
+			if (!xField) {
+				console.warn('No X field configured for chart');
+				return emptyDataWrapper(this);
+			}
 
-		const data: ProcessedData[] = [];
-		const groupBySet = this.data.groupedData.map(g => g.key?.toString()).filter(k => k != null);
+			if (!this.data?.groupedData) {
+				console.warn('No data available for chart processing');
+				return emptyDataWrapper(this);
+			}
 
-		for (const group of this.data?.groupedData ?? []) {
-			const groupKey = group.key?.toString();
-			let groupIndex: number;
-			if (groupKey == null) {
-				groupIndex = 0;
+			const data: ProcessedData[] = [];
+			const groupBySet = this.data.groupedData.map(g => g.key?.toString()).filter(k => k != null);
+
+			for (const group of this.data.groupedData) {
+				const groupKey = group.key?.toString();
+				let groupIndex: number;
+				if (groupKey == null) {
+					groupIndex = 0;
+				} else {
+					groupIndex = groupBySet.indexOf(groupKey);
+				}
+
+				for (const entry of group.entries) {
+					try {
+						const processedEntry = this.processEntry(entry, xField, propertyOrder, groupIndex, mode);
+						data.push(...processedEntry);
+					} catch (entryError) {
+						console.warn('Error processing entry:', entry, entryError);
+						// Continue processing other entries
+					}
+				}
+			}
+
+			if (mode === MultiChartMode.GROUP) {
+				return new GroupSeparatedData(this, data, groupBySet);
 			} else {
-				groupIndex = groupBySet.indexOf(groupKey);
+				return new PropertySeparatedData(this, data, groupBySet);
 			}
-
-			for (const entry of group.entries) {
-				const processedEntry = this.processEntry(entry, xField, propertyOrder, groupIndex, mode);
-				data.push(...processedEntry);
-			}
-		}
-
-		if (mode === MultiChartMode.GROUP) {
-			return new GroupSeparatedData(this, data, groupBySet);
-		} else {
-			return new PropertySeparatedData(this, data, groupBySet);
+		} catch (error) {
+			console.error('Error processing chart data:', error);
+			return emptyDataWrapper(this);
 		}
 	}
 
@@ -194,16 +214,25 @@ export class ChartView extends BasesView {
 	}
 
 	async openFile(filePath: string, newTab: boolean): Promise<void> {
-		const tFile = this.app.vault.getFileByPath(filePath);
-		if (!tFile) {
-			return;
-		}
+		try {
+			const tFile = this.app.vault.getFileByPath(filePath);
+			if (!tFile) {
+				console.warn(`File not found: ${filePath}`);
+				return;
+			}
 
-		const activeLeaf = this.app.workspace.getLeaf(newTab ? 'tab' : false);
-		if (activeLeaf) {
-			await activeLeaf.openFile(tFile, {
-				state: { mode: 'source' },
-			});
+			const activeLeaf = this.app.workspace.getLeaf(newTab ? 'tab' : false);
+			if (activeLeaf) {
+				await activeLeaf.openFile(tFile, {
+					state: { mode: 'source' },
+				});
+			} else {
+				console.warn('Could not get workspace leaf for file opening');
+			}
+		} catch (error) {
+			console.error(`Failed to open file: ${filePath}`, error);
+			// Show user-friendly error message
+			this.showErrorMessage(`Failed to open file: ${filePath}`, error);
 		}
 	}
 
@@ -293,5 +322,46 @@ export class ChartView extends BasesView {
 				default: false,
 			},
 		];
+	}
+
+	/**
+	 * Shows an error message to the user
+	 * @param message - User-friendly error message
+	 * @param error - The actual error object for logging
+	 */
+	private showErrorMessage(message: string, error?: unknown): void {
+		try {
+			// Clear existing content
+			this.scrollEl.empty();
+
+			// Create error display
+			const errorContainer = this.scrollEl.createDiv('chart-error-container');
+			errorContainer.createEl('h3', { text: 'Chart error', cls: 'chart-error-title' });
+			errorContainer.createEl('p', { text: message, cls: 'chart-error-message' });
+
+			if (error instanceof Error) {
+				const details = errorContainer.createEl('details', { cls: 'chart-error-details' });
+				details.createEl('summary', { text: 'Error details' });
+				details.createEl('pre', { text: error.message, cls: 'chart-error-text' });
+
+				if (error.stack) {
+					details.createEl('pre', { text: error.stack, cls: 'chart-error-stack' });
+				}
+			}
+
+			// Add retry button
+			const retryButton = errorContainer.createEl('button', { text: 'Retry', cls: 'chart-error-retry' });
+			retryButton.addEventListener('click', () => {
+				try {
+					this.onDataUpdated();
+				} catch (retryError) {
+					console.error('Error during retry:', retryError);
+				}
+			});
+		} catch (displayError) {
+			console.error('Failed to display error message:', displayError);
+			// Fallback: just log the original error
+			console.error('Original error:', error);
+		}
 	}
 }
