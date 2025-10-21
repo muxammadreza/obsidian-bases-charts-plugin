@@ -11,7 +11,7 @@ const entryFile = 'packages/obsidian/src/main.ts';
 export default defineConfig(async ({ mode }) => {
 	const { resolve } = path;
 	const prod = mode === 'production';
-	const outDir = prod ? 'dist' : `exampleVault/.obsidian/plugins/bases-charts/`;
+	const outDir = prod ? 'dist' : 'dist/dev';
 
 	let plugins = [
 		svelte(),

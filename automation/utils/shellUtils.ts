@@ -1,4 +1,4 @@
-import { Subprocess } from 'bun';
+import type { Subprocess } from 'bun';
 import stringArgv from 'string-argv';
 
 export enum Verboseness {

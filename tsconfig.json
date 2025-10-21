@@ -19,7 +19,10 @@
 		"sourceMap": true,
 		"lib": ["DOM", "ESNext"],
 		"allowSyntheticDefaultImports": true,
-		"types": ["bun"]
+		"types": ["bun", "@wdio/globals/types", "@wdio/mocha-framework", "wdio-obsidian-service"],
+		"paths": {
+			"utils/*": ["automation/utils/*"]
+		}
 	},
-	"include": ["packages/obsidian/src/**/*.ts", "packages/obsidian/src/**/*.svelte", "tests/**/*.ts"]
+	"include": ["packages/obsidian/src/**/*.ts", "packages/obsidian/src/**/*.svelte", "test/unit/happydom.ts", "test/unit/svelteLoader.ts", "test/unit/obsidianMock.ts"]
 }

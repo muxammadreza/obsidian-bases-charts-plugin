@@ -25,11 +25,17 @@ data.json
 obsidian.css
 dist/
 
-!exampleVault/.obsidian
+!test/vaults/exampleVault/.obsidian
 
-exampleVault/.obsidian/*
-!exampleVault/.obsidian/plugins
+test/vaults/exampleVault/.obsidian/*
+!test/vaults/exampleVault/.obsidian/plugins
 
-exampleVault/.obsidian/plugins/*
-exampleVault/.obsidian/plugins/lemons-plugin-template/*
-!exampleVault/.obsidian/plugins/lemons-plugin-template/.hotreload
+test/vaults/exampleVault/.obsidian/plugins/*
+test/vaults/exampleVault/.obsidian/plugins/lemons-plugin-template/*
+!test/vaults/exampleVault/.obsidian/plugins/lemons-plugin-template/.hotreload
+
+# WebdriverIO artifacts
+artifacts/
+
+# Environment variables file
+.env

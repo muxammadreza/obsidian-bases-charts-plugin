@@ -10,7 +10,7 @@ import obsidianmd from 'eslint-plugin-obsidianmd';
 
 export default tseslint.config(
 	{
-		ignores: ['npm/', 'node_modules/', 'exampleVault/', 'automation/', 'dist/', '**/*.svelte', '**/*.d.ts'],
+		ignores: ['npm/', 'node_modules/', 'test/vaults/exampleVault/', 'automation/', 'dist/', '**/*.svelte', '**/*.d.ts'],
 	},
 	...eslintPluginSvelte.configs['flat/recommended'],
 	...eslintPluginSvelte.configs['flat/prettier'],

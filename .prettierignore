@@ -1,4 +1,8 @@
 /lib
 node_modules
-exampleVault
+test/vaults/exampleVault
 dist
+.codex
+.kiro
+.vscode
+.github
