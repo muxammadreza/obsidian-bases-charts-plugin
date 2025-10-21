@@ -34,7 +34,7 @@ export const config: WebdriverIO.Config = {
     specs: ['./test/specs/**/*.e2e.ts'],
 
     // How many instances of Obsidian should be launched in parallel during testing.
-    maxInstances: Number(env.WDIO_MAX_INSTANCES || 4),
+    maxInstances: Number(env.WDIO_MAX_INSTANCES || 1),
 
     // "matrix" to test your plugin on multiple Obsidian versions and with emulateMobile
     capabilities: [

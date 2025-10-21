@@ -24,5 +24,12 @@
 			"utils/*": ["automation/utils/*"]
 		}
 	},
-	"include": ["packages/obsidian/src/**/*.ts", "packages/obsidian/src/**/*.svelte", "test/unit/happydom.ts", "test/unit/svelteLoader.ts", "test/unit/obsidianMock.ts"]
+	"include": [
+		"packages/obsidian/src/**/*.ts",
+		"packages/obsidian/src/**/*.svelte",
+		"test/unit/happydom.ts",
+		"test/unit/svelteLoader.ts",
+		"test/unit/obsidianMock.ts",
+		"test/specs/**/*.ts"
+	]
 }
