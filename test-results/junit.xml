@@ -1,0 +1,54 @@
+<testsuites id="" name="" tests="12" failures="0" skipped="12" errors="0" time="0.09329600000000005">
+<testsuite name="tests/basic-functionality.spec.ts" timestamp="2025-10-21T02:10:15.149Z" hostname="chromium" tests="6" failures="0" skipped="6" time="0" errors="0">
+<testcase name="Basic Plugin Functionality › should load Obsidian and enable plugin" classname="tests/basic-functionality.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Basic Plugin Functionality › should create and display scatter chart" classname="tests/basic-functionality.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Basic Plugin Functionality › should create and display line chart" classname="tests/basic-functionality.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Basic Plugin Functionality › should create and display bar chart" classname="tests/basic-functionality.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Basic Plugin Functionality › should handle chart interactions" classname="tests/basic-functionality.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Basic Plugin Functionality › should measure chart creation performance" classname="tests/basic-functionality.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="tests/basic-functionality.spec.ts" timestamp="2025-10-21T02:10:15.149Z" hostname="webkit" tests="6" failures="0" skipped="6" time="0" errors="0">
+<testcase name="Basic Plugin Functionality › should load Obsidian and enable plugin" classname="tests/basic-functionality.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Basic Plugin Functionality › should create and display scatter chart" classname="tests/basic-functionality.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Basic Plugin Functionality › should create and display line chart" classname="tests/basic-functionality.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Basic Plugin Functionality › should create and display bar chart" classname="tests/basic-functionality.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Basic Plugin Functionality › should handle chart interactions" classname="tests/basic-functionality.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Basic Plugin Functionality › should measure chart creation performance" classname="tests/basic-functionality.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+</testsuites>

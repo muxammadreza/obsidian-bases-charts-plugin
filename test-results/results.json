@@ -1,0 +1,357 @@
+{
+  "config": {
+    "configFile": "/Users/mo/projects/bases-charts/obsidian-bases-charts-plugin/playwright.config.ts",
+    "rootDir": "/Users/mo/projects/bases-charts/obsidian-bases-charts-plugin/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": "/Users/mo/projects/bases-charts/obsidian-bases-charts-plugin/e2e/global-setup.ts",
+    "globalTeardown": "/Users/mo/projects/bases-charts/obsidian-bases-charts-plugin/e2e/global-teardown.ts",
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {},
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        {
+          "outputFolder": "test-results/html-report",
+          "open": "never"
+        }
+      ],
+      [
+        "junit",
+        {
+          "outputFile": "test-results/junit.xml"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ],
+      [
+        "/Users/mo/projects/bases-charts/obsidian-bases-charts-plugin/e2e/reporters/obsidian-reporter.ts",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/mo/projects/bases-charts/obsidian-bases-charts-plugin/test-results/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/mo/projects/bases-charts/obsidian-bases-charts-plugin/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/mo/projects/bases-charts/obsidian-bases-charts-plugin/test-results/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/Users/mo/projects/bases-charts/obsidian-bases-charts-plugin/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.56.1",
+    "workers": 5,
+    "webServer": {
+      "command": "bun run test:server",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000,
+      "stdout": "pipe",
+      "stderr": "pipe"
+    }
+  },
+  "suites": [
+    {
+      "title": "tests/basic-functionality.spec.ts",
+      "file": "tests/basic-functionality.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Basic Plugin Functionality",
+          "file": "tests/basic-functionality.spec.ts",
+          "line": 7,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should load Obsidian and enable plugin",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b0d1b260e46357be016f-8f3eb8b3bb32b814a3ae",
+              "file": "tests/basic-functionality.spec.ts",
+              "line": 8,
+              "column": 6
+            },
+            {
+              "title": "should create and display scatter chart",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b0d1b260e46357be016f-616c192c8fd617cb9332",
+              "file": "tests/basic-functionality.spec.ts",
+              "line": 25,
+              "column": 6
+            },
+            {
+              "title": "should create and display line chart",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b0d1b260e46357be016f-9ee7c9450ad671d279b4",
+              "file": "tests/basic-functionality.spec.ts",
+              "line": 45,
+              "column": 6
+            },
+            {
+              "title": "should create and display bar chart",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b0d1b260e46357be016f-fffcd127bb1fbcd1dc51",
+              "file": "tests/basic-functionality.spec.ts",
+              "line": 61,
+              "column": 6
+            },
+            {
+              "title": "should handle chart interactions",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b0d1b260e46357be016f-7230d00b7d66f7b5bcfd",
+              "file": "tests/basic-functionality.spec.ts",
+              "line": 77,
+              "column": 6
+            },
+            {
+              "title": "should measure chart creation performance",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b0d1b260e46357be016f-a5e5fbca1d0248afbc1e",
+              "file": "tests/basic-functionality.spec.ts",
+              "line": 94,
+              "column": 6
+            },
+            {
+              "title": "should load Obsidian and enable plugin",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b0d1b260e46357be016f-663ea3100ccdf6b1d942",
+              "file": "tests/basic-functionality.spec.ts",
+              "line": 8,
+              "column": 6
+            },
+            {
+              "title": "should create and display scatter chart",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b0d1b260e46357be016f-303274b9bf9f39767791",
+              "file": "tests/basic-functionality.spec.ts",
+              "line": 25,
+              "column": 6
+            },
+            {
+              "title": "should create and display line chart",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b0d1b260e46357be016f-3f22d089169cd67b7830",
+              "file": "tests/basic-functionality.spec.ts",
+              "line": 45,
+              "column": 6
+            },
+            {
+              "title": "should create and display bar chart",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b0d1b260e46357be016f-4da0551d47db812a3d84",
+              "file": "tests/basic-functionality.spec.ts",
+              "line": 61,
+              "column": 6
+            },
+            {
+              "title": "should handle chart interactions",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b0d1b260e46357be016f-922712c1d9abfa9e2c82",
+              "file": "tests/basic-functionality.spec.ts",
+              "line": 77,
+              "column": 6
+            },
+            {
+              "title": "should measure chart creation performance",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b0d1b260e46357be016f-7740f9d438ce0ca8bec4",
+              "file": "tests/basic-functionality.spec.ts",
+              "line": 94,
+              "column": 6
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-10-21T02:10:15.057Z",
+    "duration": 93.29600000000005,
+    "expected": 0,
+    "skipped": 12,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -9,6 +9,11 @@
 		"tsc": "tsc -noEmit -skipLibCheck",
 		"test": "bun test",
 		"test:log": "LOG_TESTS=true bun test",
+		"test:e2e": "playwright test",
+		"test:e2e:headed": "playwright test --headed",
+		"test:e2e:debug": "playwright test --debug",
+		"test:e2e:ui": "playwright test --ui",
+		"test:server": "echo 'Test server not implemented yet'",
 		"format": "prettier --write --plugin prettier-plugin-svelte .",
 		"format:check": "prettier --check --plugin prettier-plugin-svelte .",
 		"lint": "eslint --max-warnings=0 packages/** --no-warn-ignored",
@@ -25,10 +30,12 @@
 	"devDependencies": {
 		"@happy-dom/global-registrator": "^19.0.2",
 		"@lemons_dev/parsinom": "^0.1.0",
+		"@playwright/test": "^1.56.1",
 		"@sveltejs/vite-plugin-svelte": "^6.2.1",
 		"@ticatec/uniface-echarts": "latest",
 		"@types/bun": "^1.2.23",
 		"builtin-modules": "^5.0.0",
+		"echarts": "^6.0.0",
 		"eslint": "^9.37.0",
 		"eslint-plugin-import": "^2.32.0",
 		"eslint-plugin-isaacscript": "^4.0.0",
@@ -38,6 +45,7 @@
 		"eslint-plugin-svelte": "^3.12.4",
 		"neat-csv": "^7.0.0",
 		"obsidian": "latest",
+		"playwright": "^1.56.1",
 		"prettier": "^3.6.2",
 		"prettier-plugin-svelte": "^3.4.0",
 		"string-argv": "^0.3.2",
@@ -50,7 +58,6 @@
 		"vite": "^7.1.9",
 		"vite-plugin-banner": "^0.8.1",
 		"vite-plugin-static-copy": "^3.1.3",
-		"zod": "^3.23.8",
-		"echarts": "^6.0.0"
+		"zod": "^3.23.8"
 	}
 }
