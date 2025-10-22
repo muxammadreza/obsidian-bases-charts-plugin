@@ -67,14 +67,15 @@ export class ChartView extends BasesView {
 		this.type = type;
 		this.scrollEl = scrollEl;
 		this.events = new Events();
-
-		if (this.type === CHART_VIEW_TYPE) {
-			this.type = SCATTER_CHART_VIEW_TYPE;
-		}
 	}
 
 	onload(): void {
 		try {
+			// Normalize the view type: if generic 'chart' type is used, default to scatter
+			if (this.type === CHART_VIEW_TYPE) {
+				this.type = SCATTER_CHART_VIEW_TYPE;
+			}
+
 			this.scrollEl.addClass('bases-chart-view');
 			// Add data-type attribute for test selectors and view identification
 			this.scrollEl.setAttribute('data-type', 'bases');

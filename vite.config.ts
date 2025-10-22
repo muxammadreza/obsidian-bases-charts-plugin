@@ -103,7 +103,7 @@ export default defineConfig(async ({ mode }) => {
 			cssCodeSplit: false,
 			emptyOutDir: false,
 			outDir: outDir,
-			watch: !prod ? {} : undefined,
+			watch: !prod ? false : undefined,
 			// Ensure single file output for Obsidian
 			rollupOptions: {
 				output: {

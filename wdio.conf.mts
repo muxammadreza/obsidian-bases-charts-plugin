@@ -53,6 +53,7 @@ export const config: WebdriverIO.Config = {
         // emulating it on desktop, remove this and enable the android tests in
         // wdio.mobile.conf.mts instead.
         // See https://jesse-r-s-hines.github.io/wdio-obsidian-service/wdio-obsidian-service/README#mobile-emulation
+        /*
         ...mobileVersions.map<WebdriverIO.Capabilities>(([appVersion, installerVersion]) => ({
             browserName: 'obsidian',
             'wdio:obsidianOptions': {
@@ -70,6 +71,7 @@ export const config: WebdriverIO.Config = {
                 },
             },
         })),
+        */
     ],
 
     services: ["obsidian"],

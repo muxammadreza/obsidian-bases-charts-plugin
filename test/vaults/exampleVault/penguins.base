@@ -1,6 +1,6 @@
 filters:
   and:
-    - 'file.inFolder("penguins")'
+    - file.inFolder("penguins")
 properties:
   note.species:
     displayName: Species
@@ -15,14 +15,14 @@ properties:
   note.sales:
     displayName: Sales
 views:
-  - type: chart-scatter
+  - type: chart
     name: Penguin scatter
+    order:
+      - body_mass_g
+      - flipper_length_mm
+      - sales
     options:
       x: note.culmen_length_mm
       label-property: note.species
       multi-chart-mode: Separate by property
       sync-y-axes: false
-    order:
-      - note.body_mass_g
-      - note.flipper_length_mm
-      - note.sales

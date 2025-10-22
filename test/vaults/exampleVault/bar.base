@@ -1,6 +1,6 @@
 filters:
   and:
-    - 'file.inFolder("bar")'
+    - file.inFolder("bar")
 properties:
   note.Category:
     displayName: Category
